@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, Loader2, Search, Shield } from "lucide-react";
@@ -11,6 +12,7 @@ import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   Level,
   useAllCourses,
+  useChaptersByCourse,
   useEnrollInCourse,
   useEnrolledCourseIds,
 } from "../hooks/useQueries";
@@ -27,6 +29,40 @@ const LEVELS = [
   Level.intermediate,
   Level.advanced,
 ] as const;
+
+function CourseTopics({ courseId }: { courseId: bigint }) {
+  const { data: chapters, isLoading } = useChaptersByCourse(courseId);
+
+  if (isLoading) {
+    return (
+      <div className="mb-4 space-y-1.5">
+        {[1, 2, 3].map((n) => (
+          <Skeleton key={n} className="h-3 w-full rounded" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!chapters || chapters.length === 0) return null;
+
+  const sorted = [...chapters]
+    .sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0))
+    .slice(0, 10);
+
+  return (
+    <ul className="mb-5 space-y-1">
+      {sorted.map((chapter) => (
+        <li
+          key={chapter.id.toString()}
+          className="flex items-start gap-2 text-xs text-muted-foreground/80"
+        >
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
+          <span className="line-clamp-1">{chapter.title}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function Courses() {
   const [filter, setFilter] = useState<string>("all");
@@ -139,10 +175,11 @@ export function Courses() {
                   <h3 className="font-display font-semibold text-lg mb-2 line-clamp-2">
                     {course.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-3 flex-1 mb-6">
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                     {course.description}
                   </p>
-                  <div className="flex gap-2">
+                  <CourseTopics courseId={course.id} />
+                  <div className="flex gap-2 mt-auto">
                     <Link
                       to="/courses/$id"
                       params={{ id: course.id.toString() }}

@@ -63,8 +63,8 @@ export function Navbar() {
             <Shield className="w-4 h-4 text-primary" />
           </div>
           <span className="font-display font-bold text-lg tracking-tight">
-            <span className="text-primary glow-text">Cyber</span>
-            <span className="text-foreground">Shield</span>
+            <span className="text-primary glow-text">Alangh</span>
+            <span className="text-foreground"> Academy</span>
           </span>
         </Link>
 

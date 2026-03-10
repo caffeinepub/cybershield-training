@@ -11,7 +11,7 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
             <span className="font-display font-semibold text-sm">
-              <span className="text-primary">Cyber</span>Shield Training
+              <span className="text-primary">Alangh</span> Academy
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
