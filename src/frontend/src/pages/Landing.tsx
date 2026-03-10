@@ -37,26 +37,36 @@ const LEVEL_COLORS: Record<Level, string> = {
   [Level.advanced]: "bg-destructive/20 text-destructive border-destructive/40",
 };
 
+const COURSE_IMAGES: Record<Level, string> = {
+  [Level.beginner]: "/assets/generated/course-beginner.dim_400x200.png",
+  [Level.intermediate]: "/assets/generated/course-intermediate.dim_400x200.png",
+  [Level.advanced]: "/assets/generated/course-advanced.dim_400x200.png",
+};
+
 const STATS = [
   {
     value: "3.5 Million",
     label: "Unfilled cybersecurity jobs globally",
     icon: Users,
+    image: "/assets/generated/stat-jobs.dim_300x200.png",
   },
   {
     value: "₹6–25 LPA",
     label: "Average salary range in India",
     icon: TrendingUp,
+    image: "/assets/generated/stat-salary.dim_300x200.png",
   },
   {
     value: "0% Unemployment",
     label: "In the cybersecurity field",
     icon: Target,
+    image: "/assets/generated/stat-employment.dim_300x200.png",
   },
   {
     value: "Every 39 sec",
     label: "A cyberattack occurs globally",
     icon: Zap,
+    image: "/assets/generated/stat-attack.dim_300x200.png",
   },
 ];
 
@@ -78,31 +88,37 @@ const PERSONAS = [
     icon: Lightbulb,
     title: "The Curious Beginner",
     desc: "No tech background? No problem. Start from zero.",
+    image: "/assets/generated/persona-beginner.dim_240x180.png",
   },
   {
     icon: Shield,
     title: "The IT Professional",
     desc: "Already in IT? Level up to cybersecurity roles.",
+    image: "/assets/generated/persona-it-pro.dim_240x180.png",
   },
   {
     icon: Route,
     title: "The Career Switcher",
     desc: "From any domain to cybersecurity. We'll show you how.",
+    image: "/assets/generated/persona-switcher.dim_240x180.png",
   },
   {
     icon: GraduationCap,
     title: "The Student",
     desc: "Build skills before your first job. Stand out from day one.",
+    image: "/assets/generated/persona-student.dim_240x180.png",
   },
   {
     icon: Home,
     title: "The Homemaker",
     desc: "Re-entering the workforce? Cybersecurity welcomes you.",
+    image: "/assets/generated/persona-homemaker.dim_240x180.png",
   },
   {
     icon: BriefcaseBusiness,
     title: "The Working Professional",
     desc: "Upskill on your own schedule. 5–10 hrs/week is enough.",
+    image: "/assets/generated/persona-professional.dim_240x180.png",
   },
 ];
 
@@ -113,6 +129,7 @@ const PATHS = [
     badge: "Start Here",
     badgeClass: "bg-accent/20 text-accent border-accent/40",
     borderClass: "hover:border-accent/60",
+    image: "/assets/generated/path-beginner.dim_400x200.png",
   },
   {
     title: "Intermediate Path",
@@ -120,6 +137,7 @@ const PATHS = [
     badge: "Level Up",
     badgeClass: "bg-primary/20 text-primary border-primary/40",
     borderClass: "hover:border-primary/60",
+    image: "/assets/generated/path-intermediate.dim_400x200.png",
   },
   {
     title: "Advanced Path",
@@ -127,6 +145,7 @@ const PATHS = [
     badge: "Go Deep",
     badgeClass: "bg-destructive/20 text-destructive border-destructive/40",
     borderClass: "hover:border-destructive/60",
+    image: "/assets/generated/path-advanced.dim_400x200.png",
   },
 ];
 
@@ -301,8 +320,15 @@ export function Landing() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <Card className="border-border/60 bg-card/60 hover:border-primary/40 transition-all duration-300 text-center">
-                  <CardContent className="p-8">
+                <Card className="border-border/60 bg-card/60 hover:border-primary/40 transition-all duration-300 text-center group overflow-hidden">
+                  <div className="overflow-hidden">
+                    <img
+                      src={stat.image}
+                      alt={stat.label}
+                      className="w-full h-[120px] object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                  <CardContent className="p-6">
                     <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-4">
                       <stat.icon className="w-6 h-6 text-primary" />
                     </div>
@@ -372,7 +398,15 @@ export function Landing() {
                 <div className="absolute inset-0 grid-bg opacity-20" />
                 <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-primary/5 blur-2xl" />
                 <div className="relative z-10">
-                  <Shield className="w-16 h-16 text-primary mx-auto mb-6" />
+                  {/* Decorative banner image with float animation */}
+                  <div className="mb-6 rounded-xl overflow-hidden">
+                    <img
+                      src="/assets/generated/path-beginner.dim_400x200.png"
+                      alt="Cybersecurity learning path"
+                      className="w-full h-[160px] object-cover rounded-xl"
+                      style={{ animation: "float 4s ease-in-out infinite" }}
+                    />
+                  </div>
                   <div className="space-y-4">
                     {["Beginner", "Intermediate", "Advanced"].map(
                       (level, i) => (
@@ -431,7 +465,15 @@ export function Landing() {
                 transition={{ delay: i * 0.08 }}
                 data-ocid={`personas.item.${i + 1}`}
               >
-                <Card className="border-border/60 bg-card/50 hover:border-primary/40 hover:bg-card transition-all duration-300 group h-full">
+                <Card className="border-border/60 bg-card/50 hover:border-primary/40 hover:bg-card transition-all duration-300 group h-full overflow-hidden">
+                  {/* Persona image at top */}
+                  <div className="overflow-hidden">
+                    <img
+                      src={persona.image}
+                      alt={persona.title}
+                      className="w-full h-[120px] object-cover rounded-t-xl group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
                   <CardContent className="p-6">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-all">
                       <persona.icon className="w-6 h-6 text-primary" />
@@ -479,8 +521,17 @@ export function Landing() {
                 data-ocid={`paths.item.${i + 1}`}
               >
                 <Card
-                  className={`border-border/60 bg-card/50 transition-all duration-300 h-full flex flex-col ${path.borderClass}`}
+                  className={`border-border/60 bg-card/50 transition-all duration-300 h-full flex flex-col group overflow-hidden ${path.borderClass}`}
                 >
+                  {/* Path banner image */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={path.image}
+                      alt={path.title}
+                      className="w-full h-[140px] object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card/80" />
+                  </div>
                   <CardContent className="p-8 flex flex-col h-full">
                     <Badge
                       variant="outline"
@@ -560,9 +611,17 @@ export function Landing() {
                 >
                   <Link to="/courses/$id" params={{ id: course.id.toString() }}>
                     <Card
-                      className="border-border/60 bg-card/50 hover:border-primary/40 hover:shadow-cyber transition-all duration-300 cursor-pointer h-full"
+                      className="border-border/60 bg-card/50 hover:border-primary/40 hover:shadow-cyber transition-all duration-300 cursor-pointer h-full group overflow-hidden"
                       data-ocid={`landing.course.item.${i + 1}`}
                     >
+                      {/* Course thumbnail */}
+                      <div className="overflow-hidden">
+                        <img
+                          src={COURSE_IMAGES[course.level]}
+                          alt={course.title}
+                          className="w-full h-[120px] object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
                       <CardContent className="p-6 flex flex-col h-full">
                         <div className="flex items-start justify-between mb-3">
                           <Badge
