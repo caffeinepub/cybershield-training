@@ -21,6 +21,7 @@ import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
 import { Landing } from "./pages/Landing";
 import { StaticPage } from "./pages/StaticPage";
+import { TermsOfUse } from "./pages/TermsOfUse";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 
 const queryClient = new QueryClient({
@@ -137,7 +138,7 @@ const aboutRoute = createRoute({
 const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/terms",
-  component: () => <StaticPage title="Terms of Use" />,
+  component: TermsOfUse,
 });
 
 const refundRoute = createRoute({
