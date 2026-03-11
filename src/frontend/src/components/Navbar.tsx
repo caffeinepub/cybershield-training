@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   BookOpen,
   LayoutDashboard,
@@ -8,7 +7,6 @@ import {
   LogOut,
   Menu,
   Settings,
-  Shield,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -59,13 +57,11 @@ export function Navbar() {
           className="flex items-center gap-2 group"
           data-ocid="nav.home.link"
         >
-          <div className="w-8 h-8 rounded bg-primary/20 border border-primary/40 flex items-center justify-center glow-cyan group-hover:scale-110 transition-transform">
-            <Shield className="w-4 h-4 text-primary" />
-          </div>
-          <span className="font-display font-bold text-lg tracking-tight">
-            <span className="text-primary glow-text">Alangh</span>
-            <span className="text-foreground"> Academy</span>
-          </span>
+          <img
+            src="/assets/Alangh_Logo.png"
+            alt="Alangh Academy"
+            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+          />
         </Link>
 
         {/* Desktop Nav */}

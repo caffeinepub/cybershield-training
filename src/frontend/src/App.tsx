@@ -6,7 +6,6 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Footer } from "./components/Footer";
@@ -15,11 +14,13 @@ import { ProfileSetup } from "./components/ProfileSetup";
 import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useCallerUserProfile, useIsAdmin } from "./hooks/useQueries";
+import { AboutUs } from "./pages/AboutUs";
 import { Checkout } from "./pages/Checkout";
 import { CourseDetail } from "./pages/CourseDetail";
 import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
 import { Landing } from "./pages/Landing";
+import { StaticPage } from "./pages/StaticPage";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 
 const queryClient = new QueryClient({
@@ -126,6 +127,55 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
+// Static footer pages
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: AboutUs,
+});
+
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/terms",
+  component: () => <StaticPage title="Terms of Use" />,
+});
+
+const refundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/refund-policy",
+  component: () => <StaticPage title="Refund Policy" />,
+});
+
+const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/privacy",
+  component: () => <StaticPage title="Privacy Policy" />,
+});
+
+const disclaimerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/disclaimer",
+  component: () => <StaticPage title="Disclaimer" />,
+});
+
+const codeOfConductRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/code-of-conduct",
+  component: () => <StaticPage title="Code of Conduct" />,
+});
+
+const blogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/blog",
+  component: () => <StaticPage title="Blog" />,
+});
+
+const contactRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/contact",
+  component: () => <StaticPage title="Contact Us" />,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   coursesRoute,
@@ -133,6 +183,14 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   checkoutRoute,
   adminRoute,
+  aboutRoute,
+  termsRoute,
+  refundRoute,
+  privacyRoute,
+  disclaimerRoute,
+  codeOfConductRoute,
+  blogRoute,
+  contactRoute,
 ]);
 
 const router = createRouter({ routeTree });
