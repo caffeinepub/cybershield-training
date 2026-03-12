@@ -13,6 +13,7 @@ import {
   ArrowRight,
   BookOpen,
   BriefcaseBusiness,
+  Building2,
   CheckCircle2,
   ChevronRight,
   GraduationCap,
@@ -24,6 +25,7 @@ import {
   Star,
   Target,
   TrendingUp,
+  UserPlus,
   Users,
   Zap,
 } from "lucide-react";
@@ -262,6 +264,16 @@ export function Landing() {
                 </Button>
               </Link>
 
+              <Link to="/register">
+                <Button
+                  size="lg"
+                  className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold"
+                  data-ocid="hero.register.button"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" /> Register Now
+                </Button>
+              </Link>
+
               {identity ? (
                 <Link to="/courses">
                   <Button
@@ -398,7 +410,6 @@ export function Landing() {
                 <div className="absolute inset-0 grid-bg opacity-20" />
                 <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-primary/5 blur-2xl" />
                 <div className="relative z-10">
-                  {/* Decorative banner image with float animation */}
                   <div className="mb-6 rounded-xl overflow-hidden">
                     <img
                       src="/assets/generated/path-beginner.dim_400x200.png"
@@ -466,7 +477,6 @@ export function Landing() {
                 data-ocid={`personas.item.${i + 1}`}
               >
                 <Card className="border-border/60 bg-card/50 hover:border-primary/40 hover:bg-card transition-all duration-300 group h-full overflow-hidden">
-                  {/* Persona image at top */}
                   <div className="overflow-hidden">
                     <img
                       src={persona.image}
@@ -523,7 +533,6 @@ export function Landing() {
                 <Card
                   className={`border-border/60 bg-card/50 transition-all duration-300 h-full flex flex-col group overflow-hidden ${path.borderClass}`}
                 >
-                  {/* Path banner image */}
                   <div className="relative overflow-hidden">
                     <img
                       src={path.image}
@@ -614,7 +623,6 @@ export function Landing() {
                       className="border-border/60 bg-card/50 hover:border-primary/40 hover:shadow-cyber transition-all duration-300 cursor-pointer h-full group overflow-hidden"
                       data-ocid={`landing.course.item.${i + 1}`}
                     >
-                      {/* Course thumbnail */}
                       <div className="overflow-hidden">
                         <img
                           src={COURSE_IMAGES[course.level]}
@@ -762,8 +770,59 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Corporate Training Teaser */}
+      <section className="py-24" data-ocid="landing.corporate.section">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-secondary/30 p-10 md:p-14">
+              <div className="absolute inset-0 grid-bg opacity-15" />
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-accent/5 blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-primary/5 blur-3xl" />
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                <div className="flex-shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+                    <Building2 className="w-10 h-10 text-primary" />
+                  </div>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <Badge className="mb-4 border-accent/40 bg-accent/10 text-accent font-mono text-xs tracking-widest">
+                    ENTERPRISE & CORPORATE
+                  </Badge>
+                  <h2 className="font-display text-2xl md:text-3xl font-bold mb-4">
+                    Scale Cybersecurity Skills{" "}
+                    <span className="text-primary glow-text">
+                      Across Your Organization
+                    </span>
+                  </h2>
+                  <p className="text-muted-foreground leading-relaxed mb-6 max-w-2xl">
+                    Alangh Academy offers customized corporate cybersecurity
+                    training designed for teams of any size. From awareness
+                    programs to advanced technical upskilling — we build
+                    programs that fit your goals, roles, and risk profile.
+                  </p>
+                  <Link to="/corporate-training">
+                    <Button
+                      size="lg"
+                      className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
+                      data-ocid="landing.corporate.primary_button"
+                    >
+                      Explore Corporate Training{" "}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Section 8: Final CTA */}
-      <section className="py-24">
+      <section className="py-24 bg-secondary/20">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
@@ -785,28 +844,40 @@ export function Landing() {
               <p className="text-muted-foreground mb-8 text-lg">
                 This is your launchpad. Let's build your future.
               </p>
-              {identity ? (
-                <Link to="/courses">
+              <div className="flex flex-wrap gap-4 justify-center">
+                {identity ? (
+                  <Link to="/courses">
+                    <Button
+                      size="lg"
+                      className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
+                      data-ocid="cta.primary_button"
+                    >
+                      Start Learning Today{" "}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                ) : (
                   <Button
                     size="lg"
+                    onClick={login}
+                    disabled={isLoggingIn}
                     className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                    data-ocid="cta.primary_button"
+                    data-ocid="cta.login.button"
                   >
-                    Start Learning Today <ArrowRight className="w-4 h-4 ml-2" />
+                    {isLoggingIn ? "Connecting..." : "Start Learning Today"}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+                <Link to="/register">
+                  <Button
+                    size="lg"
+                    className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold"
+                    data-ocid="cta.register.button"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" /> Register Now
                   </Button>
                 </Link>
-              ) : (
-                <Button
-                  size="lg"
-                  onClick={login}
-                  disabled={isLoggingIn}
-                  className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                  data-ocid="cta.login.button"
-                >
-                  {isLoggingIn ? "Connecting..." : "Start Learning Today"}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
+              </div>
             </div>
           </motion.div>
         </div>

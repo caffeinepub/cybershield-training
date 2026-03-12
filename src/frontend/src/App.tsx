@@ -15,14 +15,19 @@ import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import { useCallerUserProfile, useIsAdmin } from "./hooks/useQueries";
 import { AboutUs } from "./pages/AboutUs";
+import { Blog } from "./pages/Blog";
 import { Checkout } from "./pages/Checkout";
+import { CodeOfConduct } from "./pages/CodeOfConduct";
+import { ContactUs } from "./pages/ContactUs";
+import { CorporateTraining } from "./pages/CorporateTraining";
 import { CourseDetail } from "./pages/CourseDetail";
 import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
+import { Disclaimer } from "./pages/Disclaimer";
 import { Landing } from "./pages/Landing";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { RefundPolicy } from "./pages/RefundPolicy";
-import { StaticPage } from "./pages/StaticPage";
+import { Register } from "./pages/Register";
 import { TermsOfUse } from "./pages/TermsOfUse";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 
@@ -158,25 +163,37 @@ const privacyRoute = createRoute({
 const disclaimerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/disclaimer",
-  component: () => <StaticPage title="Disclaimer" />,
+  component: Disclaimer,
 });
 
 const codeOfConductRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/code-of-conduct",
-  component: () => <StaticPage title="Code of Conduct" />,
+  component: CodeOfConduct,
 });
 
 const blogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/blog",
-  component: () => <StaticPage title="Blog" />,
+  component: Blog,
 });
 
 const contactRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/contact",
-  component: () => <StaticPage title="Contact Us" />,
+  component: ContactUs,
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/register",
+  component: Register,
+});
+
+const corporateTrainingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/corporate-training",
+  component: CorporateTraining,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -194,6 +211,8 @@ const routeTree = rootRoute.addChildren([
   codeOfConductRoute,
   blogRoute,
   contactRoute,
+  registerRoute,
+  corporateTrainingRoute,
 ]);
 
 const router = createRouter({ routeTree });

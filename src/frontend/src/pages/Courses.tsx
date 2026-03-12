@@ -2,17 +2,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Loader2, Search, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  Loader2,
+  Search,
+  Shield,
+  UserPlus,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   Level,
-  useAllCourses,
-  useChaptersByCourse,
   useEnrollInCourse,
   useEnrolledCourseIds,
 } from "../hooks/useQueries";
@@ -30,49 +34,58 @@ const LEVELS = [
   Level.advanced,
 ] as const;
 
-function CourseTopics({ courseId }: { courseId: bigint }) {
-  const { data: chapters, isLoading } = useChaptersByCourse(courseId);
-
-  if (isLoading) {
-    return (
-      <div className="mb-4 space-y-1.5">
-        {[1, 2, 3].map((n) => (
-          <Skeleton key={n} className="h-3 w-full rounded" />
-        ))}
-      </div>
-    );
-  }
-
-  if (!chapters || chapters.length === 0) return null;
-
-  const sorted = [...chapters]
-    .sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0))
-    .slice(0, 10);
-
-  return (
-    <ul className="mb-5 space-y-1">
-      {sorted.map((chapter) => (
-        <li
-          key={chapter.id.toString()}
-          className="flex items-start gap-2 text-xs text-muted-foreground/80"
-        >
-          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
-          <span className="line-clamp-1">{chapter.title}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
+const STATIC_COURSES = [
+  {
+    id: 1n,
+    title: "Alangh Cybersecurity Foundation (HackStart™)",
+    level: Level.beginner,
+    description:
+      "Build a rock-solid foundation in cybersecurity from zero. No IT background required. This structured program covers the essentials to get you job-aware and cyber-confident.",
+    chapters: [
+      "Introduction to Cybersecurity - What is cybersecurity, CIA triad, types of threats, attack surfaces",
+      "Networking Fundamentals - OSI model, TCP/IP, DNS, HTTP/S, ports, protocols, firewalls, VPNs",
+      "Operating System Basics - Windows & Linux fundamentals, file systems, user management, permissions",
+      "Understanding Cyber Threats - Malware types, phishing, social engineering, ransomware, insider threats",
+      "Basic Cryptography - Encryption vs encoding, symmetric/asymmetric, hashing, SSL/TLS, PKI basics",
+      "Web Application Basics - How websites work, HTTP requests, cookies, sessions, OWASP Top 10 intro",
+      "Identity & Access Management - Authentication, authorization, MFA, password policies, SSO basics",
+      "Security Tools Overview - Intro to Wireshark, Nmap, Metasploit, Burp Suite, SIEM basics",
+      "Incident Response Basics - IR lifecycle, logs, evidence handling, basic forensics",
+      "Cybersecurity Careers & Paths - SOC analyst, pen tester, GRC, cloud security roles and how to choose",
+    ],
+  },
+  {
+    id: 2n,
+    title: "Alangh Professional Cybersecurity Track (CyberElevate™)",
+    level: Level.intermediate,
+    description:
+      "Take your cybersecurity skills to the next level. Designed for learners who have completed foundational training and are ready for hands-on, role-specific skills.",
+    chapters: [
+      "Advanced Networking & Protocols - Subnetting, VLANs, routing protocols, packet analysis, network attacks",
+      "Linux for Security Professionals - Command line mastery, bash scripting, log analysis, hardening",
+      "Vulnerability Assessment - CVSS scoring, vulnerability scanners, patch management, risk prioritization",
+      "Web Application Penetration Testing - OWASP Top 10 deep dive, SQL injection, XSS, CSRF, tools",
+      "Network Penetration Testing - Recon, scanning, exploitation, lateral movement, pivoting",
+      "Active Directory Security - AD architecture, Kerberos attacks, BloodHound, privilege escalation",
+      "Malware Analysis Basics - Static vs dynamic analysis, sandboxing, reverse engineering intro",
+      "Cloud Security Fundamentals - AWS/Azure/GCP security, IAM, misconfiguration risks, cloud attacks",
+      "SIEM & Log Analysis - Splunk/ELK basics, use cases, alert tuning, incident correlation",
+      "Threat Intelligence - IOCs, threat feeds, MITRE ATT&CK framework, threat hunting basics",
+      "Governance, Risk & Compliance (GRC) - ISO 27001, GDPR, PCI-DSS, risk frameworks, audit basics",
+      "Security Architecture & Design - Zero trust, defense in depth, secure SDLC, architecture review",
+      "Capstone Project & Career Prep - Real-world project, portfolio building, interview prep, job strategy",
+    ],
+  },
+];
 
 export function Courses() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const { data: courses, isLoading } = useAllCourses();
-  const { data: enrolledIds } = useEnrolledCourseIds();
+  const { data: enrolledIds, isLoading } = useEnrolledCourseIds();
   const enrollMutation = useEnrollInCourse();
   const { identity } = useInternetIdentity();
 
-  const filtered = (courses || []).filter((c) => {
+  const filtered = STATIC_COURSES.filter((c) => {
     const matchLevel = filter === "all" || c.level === filter;
     const matchSearch =
       !search ||
@@ -88,7 +101,7 @@ export function Courses() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-10"
+        className="mb-8"
       >
         <h1 className="font-display text-4xl font-bold mb-2">
           Course <span className="text-primary glow-text">Catalog</span>
@@ -96,6 +109,37 @@ export function Courses() {
         <p className="text-muted-foreground">
           Choose your path. Master cybersecurity at your pace.
         </p>
+      </motion.div>
+
+      {/* Register Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-8 border border-primary/40 rounded-xl bg-primary/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+            <UserPlus className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">
+              Ready to begin your journey?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Register now to secure your spot in our upcoming cybersecurity
+              training batches.
+            </p>
+          </div>
+        </div>
+        <Link to="/register" className="flex-shrink-0">
+          <Button
+            className="bg-primary text-primary-foreground hover:bg-primary/80 font-semibold whitespace-nowrap"
+            data-ocid="courses.register.button"
+          >
+            Register Now <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
       </motion.div>
 
       {/* Filters */}
@@ -139,7 +183,9 @@ export function Courses() {
           data-ocid="courses.empty_state"
         >
           <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-display text-lg mb-1">No courses found</p>
+          <p className="font-display text-lg mb-1">
+            No courses match your filter
+          </p>
           <p className="text-sm">Try adjusting your search or filter.</p>
         </div>
       ) : (
@@ -178,8 +224,18 @@ export function Courses() {
                   <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                     {course.description}
                   </p>
-                  <CourseTopics courseId={course.id} />
-                  <div className="flex gap-2 mt-auto">
+                  <ul className="mb-5 space-y-1">
+                    {course.chapters.slice(0, 10).map((chapter) => (
+                      <li
+                        key={chapter}
+                        className="flex items-start gap-2 text-xs text-muted-foreground/80"
+                      >
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
+                        <span className="line-clamp-1">{chapter}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-2 mt-auto flex-wrap">
                     <Link
                       to="/courses/$id"
                       params={{ id: course.id.toString() }}
@@ -207,6 +263,15 @@ export function Courses() {
                         )}
                       </Button>
                     )}
+                    <Link to="/register">
+                      <Button
+                        variant="outline"
+                        className="border-accent/40 text-accent hover:bg-accent/10 whitespace-nowrap"
+                        data-ocid={`courses.card.register.button.${i + 1}`}
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" /> Register
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

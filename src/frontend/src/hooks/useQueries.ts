@@ -9,27 +9,35 @@ export { Level, UserRole };
 export type { Course, Chapter, UserProfile };
 
 export function useAllCourses() {
-  const { actor, isFetching } = useActor();
-  return useQuery<Course[]>({
+  const { actor, isFetching: actorFetching } = useActor();
+  const query = useQuery<Course[]>({
     queryKey: ["courses"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllCourses();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
+  return {
+    ...query,
+    isLoading: query.isLoading || actorFetching,
+  };
 }
 
 export function useChaptersByCourse(courseId: bigint | null) {
-  const { actor, isFetching } = useActor();
-  return useQuery<Chapter[]>({
+  const { actor, isFetching: actorFetching } = useActor();
+  const query = useQuery<Chapter[]>({
     queryKey: ["chapters", courseId?.toString()],
     queryFn: async () => {
       if (!actor || courseId === null) return [];
       return actor.getChaptersByCourse(courseId);
     },
-    enabled: !!actor && !isFetching && courseId !== null,
+    enabled: !!actor && !actorFetching && courseId !== null,
   });
+  return {
+    ...query,
+    isLoading: query.isLoading || actorFetching,
+  };
 }
 
 export function useCallerUserProfile() {
