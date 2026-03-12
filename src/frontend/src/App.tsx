@@ -20,6 +20,8 @@ import { CourseDetail } from "./pages/CourseDetail";
 import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
 import { Landing } from "./pages/Landing";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
+import { RefundPolicy } from "./pages/RefundPolicy";
 import { StaticPage } from "./pages/StaticPage";
 import { TermsOfUse } from "./pages/TermsOfUse";
 import { AdminPortal } from "./pages/admin/AdminPortal";
@@ -144,13 +146,13 @@ const termsRoute = createRoute({
 const refundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/refund-policy",
-  component: () => <StaticPage title="Refund Policy" />,
+  component: RefundPolicy,
 });
 
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/privacy",
-  component: () => <StaticPage title="Privacy Policy" />,
+  component: PrivacyPolicy,
 });
 
 const disclaimerRoute = createRoute({
