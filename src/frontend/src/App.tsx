@@ -28,6 +28,7 @@ import { Landing } from "./pages/Landing";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { RefundPolicy } from "./pages/RefundPolicy";
 import { Register } from "./pages/Register";
+import { SelfAssessment } from "./pages/SelfAssessment";
 import { TermsOfUse } from "./pages/TermsOfUse";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 
@@ -190,6 +191,12 @@ const registerRoute = createRoute({
   component: Register,
 });
 
+const selfAssessmentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/self-assessment",
+  component: SelfAssessment,
+});
+
 const corporateTrainingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/corporate-training",
@@ -213,6 +220,7 @@ const routeTree = rootRoute.addChildren([
   contactRoute,
   registerRoute,
   corporateTrainingRoute,
+  selfAssessmentRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface FormData {
   name: string;
@@ -24,6 +25,7 @@ interface FormErrors {
 }
 
 export function Register() {
+  const navigate = useNavigate();
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
@@ -34,6 +36,15 @@ export function Register() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (submitted) {
+      const timer = setTimeout(() => {
+        navigate({ to: "/self-assessment" });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [submitted, navigate]);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -118,14 +129,12 @@ export function Register() {
                       Registration Submitted!
                     </h2>
                     <p className="text-muted-foreground text-lg leading-relaxed">
-                      Thank you for registering! We'll be in touch soon.
+                      Registration successful! Redirecting to your
+                      self-assessment...
                     </p>
                     <p className="text-sm text-muted-foreground mt-3">
-                      Our team will review your application and contact you at{" "}
-                      <span className="text-primary font-semibold">
-                        {form.email}
-                      </span>
-                      .
+                      Preparing your personalized cybersecurity self-assessment.
+                      Please wait a moment...
                     </p>
                   </CardContent>
                 </Card>

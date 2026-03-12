@@ -770,6 +770,61 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Self-Assessment Section */}
+      <section
+        className="py-24 bg-secondary/20"
+        data-ocid="landing.self_assessment.section"
+      >
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-card/40 p-10 md:p-14">
+              <div className="absolute inset-0 grid-bg opacity-10" />
+              <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-accent/5 blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full bg-primary/5 blur-3xl" />
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                <div className="flex-shrink-0">
+                  <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center">
+                    <Shield className="w-10 h-10 text-accent" />
+                  </div>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <Badge className="mb-4 border-accent/40 bg-accent/10 text-accent font-mono text-xs tracking-widest">
+                    FREE SELF-ASSESSMENT
+                  </Badge>
+                  <h2 className="font-display text-2xl md:text-3xl font-bold mb-4">
+                    Know Your{" "}
+                    <span className="text-accent glow-text">
+                      Cybersecurity Level
+                    </span>
+                  </h2>
+                  <p className="text-muted-foreground leading-relaxed mb-6 max-w-2xl">
+                    Not sure where to begin your cybersecurity journey? Our free
+                    self-assessment helps you gauge your current knowledge level
+                    across key domains including network security, cloud
+                    security, identity management, and more. It takes less than
+                    10 minutes and helps us recommend the right course for you.
+                  </p>
+                  <Link to="/register">
+                    <Button
+                      size="lg"
+                      className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold"
+                      data-ocid="landing.self_assessment.primary_button"
+                    >
+                      Start Self-Assessment
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Corporate Training Teaser */}
       <section className="py-24" data-ocid="landing.corporate.section">
         <div className="container mx-auto px-4">

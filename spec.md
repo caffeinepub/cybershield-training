@@ -1,34 +1,29 @@
-# CyberShield Training (Alangh Academy)
+# Alangh Academy
 
 ## Current State
-The landing page (Landing.tsx) has a hero section with generic "Defend. Attack. Dominate." copy, a features grid, a featured courses preview, and a CTA. The navbar/footer brand says "CyberShield".
+The platform has a home page with multiple sections, a registration page at `/register`, and various informational/course pages. The registration form captures Name, Email, Phone, Address, profile/work experience, and motivation. After successful submission, it currently shows a success message inline.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Hero: new headline "Cybersecurity isn't just for hackers. It's for everyone!" + subtext + "Explore Learning Paths" CTA button
-- Hero background: use generated hero-shield image
-- "Why Cybersecurity" section with career infographic image (/assets/generated/career-infographic.dim_800x500.png) and 5 stats cards (High Demand, Competitive Salary, Job Security, Remote Friendly, Global Opportunities)
-- "Why Alangh Academy" section with descriptive copy and 4 differentiator cards (Structured Paths, Real-World Labs, Role-Based Training, Mentorship)
-- "Who is this For" section with 4 persona cards: Complete Beginner, IT Professional, Non-Tech Background, Career Switcher
-- "Where Should I Start" section with path-decision infographic (/assets/generated/start-path-infographic.dim_800x500.png) and 4 clickable persona options
-- Testimonials section with 3 placeholder testimonial cards
-- FAQ accordion section with all 8 questions from the provided content
-- Final CTA banner: "Ready to Start Your Cybersecurity Journey? This is your launchpad."
-- Update navbar/footer brand name from "CyberShield" to "Alangh Academy"
+- New `/self-assessment` route and `SelfAssessment.tsx` page
+- Self-assessment section on the home page (Landing.tsx) with a brief description and a button linking to `/register`
+- 40-question data pool (all questions from Chapters 1-7) defined as a constant
+- Logic to randomly select 20 questions per attempt, ensuring no repeat questions from previous attempt (tracked in sessionStorage)
+- Multi-choice and single-choice question support
+- Scoring: pass = 16+ out of 20 correct
+- Pass state: success message + CTA to enroll in courses
+- Fail state: score display + option to retake (loads 20 NEW questions not from previous set)
 
 ### Modify
-- Landing.tsx hero copy and structure to match new brand messaging
-- Navbar brand name to "Alangh Academy"
-- Footer brand name to "Alangh Academy"
+- `Register.tsx`: after successful form submission, redirect user to `/self-assessment` instead of showing inline success message
+- `App.tsx`: add `selfAssessmentRoute` at path `/self-assessment`
 
 ### Remove
-- Old hero copy: "Defend. Attack. Dominate."
-- Old features section (replaced by Why Alangh Academy)
+- Nothing removed
 
 ## Implementation Plan
-1. Update Landing.tsx with all new sections using provided content and generated images
-2. Update Navbar.tsx brand name to "Alangh Academy"
-3. Update Footer.tsx brand name to "Alangh Academy"
-4. Use Accordion component for FAQ section
-5. Add motion animations on all sections (already using framer-motion)
+1. Create `src/frontend/src/pages/SelfAssessment.tsx` with full question bank (40 questions), random selection of 20, answer tracking, scoring, pass/fail states, retake logic using sessionStorage to avoid question repeats
+2. Update `App.tsx` to add the `/self-assessment` route
+3. Update `Register.tsx` to redirect to `/self-assessment` on successful submission
+4. Update `Landing.tsx` to add a self-assessment section with description and "Start Self-Assessment" button linking to `/register`
