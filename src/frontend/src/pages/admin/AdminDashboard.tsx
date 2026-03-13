@@ -18,6 +18,7 @@ interface Registration {
   phone?: string;
   registeredAt?: string;
   score?: number;
+  enrolledCourse?: string;
 }
 
 function getRegistrations(): Registration[] {
@@ -36,10 +37,21 @@ function getSessions(): unknown[] {
   }
 }
 
+function courseColor(course?: string) {
+  if (!course) return "border-border/40 text-muted-foreground";
+  if (course.toLowerCase().includes("beginner"))
+    return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+  if (course.toLowerCase().includes("intermediate"))
+    return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
+  return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+}
+
 export function AdminDashboard() {
   const registrations = getRegistrations();
   const sessions = getSessions();
   const recent = registrations.slice(-5).reverse();
+
+  const enrolledCount = registrations.filter((r) => r.enrolledCourse).length;
 
   const stats = [
     {
@@ -51,11 +63,11 @@ export function AdminDashboard() {
       color: "text-blue-400",
     },
     {
-      label: "Total Courses",
-      value: 2,
+      label: "Course Enrollments",
+      value: enrolledCount,
       icon: BookOpen,
       ocid: "admin.dashboard.courses.card",
-      href: "/admin/courses",
+      href: "/admin/users",
       color: "text-emerald-400",
     },
     {
@@ -136,6 +148,7 @@ export function AdminDashboard() {
                   <TableRow className="border-border/40">
                     <TableHead className="text-xs">Name</TableHead>
                     <TableHead className="text-xs">Email</TableHead>
+                    <TableHead className="text-xs">Enrolled Course</TableHead>
                     <TableHead className="text-xs">Registered</TableHead>
                     <TableHead className="text-xs">Score</TableHead>
                   </TableRow>
@@ -149,10 +162,20 @@ export function AdminDashboard() {
                       <TableCell className="text-sm text-muted-foreground">
                         {reg.email}
                       </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${courseColor(reg.enrolledCourse)}`}
+                        >
+                          {reg.enrolledCourse
+                            ? reg.enrolledCourse.split("\u2014")[0].trim()
+                            : "Not enrolled"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {reg.registeredAt
                           ? new Date(reg.registeredAt).toLocaleDateString()
-                          : "—"}
+                          : "\u2014"}
                       </TableCell>
                       <TableCell>
                         {reg.score !== undefined ? (

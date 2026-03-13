@@ -541,6 +541,25 @@ export function SelfAssessment() {
     setScore(correct);
     setSubmitted(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Persist score to the most recent registration in localStorage
+    try {
+      const regs: Array<Record<string, unknown>> = JSON.parse(
+        localStorage.getItem("alangh_registrations") || "[]",
+      );
+      if (regs.length > 0) {
+        // Update the last registration that hasn't taken the assessment yet,
+        // or the most recently registered user.
+        const targetIdx =
+          regs.findIndex((r) => r.score === undefined) !== -1
+            ? regs.findIndex((r) => r.score === undefined)
+            : regs.length - 1;
+        regs[targetIdx] = { ...regs[targetIdx], score: correct };
+        localStorage.setItem("alangh_registrations", JSON.stringify(regs));
+      }
+    } catch {
+      // ignore storage errors silently
+    }
   };
 
   const handleRetake = () => {

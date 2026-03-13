@@ -20,6 +20,7 @@ interface Registration {
   address?: string;
   registeredAt?: string;
   score?: number;
+  enrolledCourse?: string;
 }
 
 function getRegistrations(): Registration[] {
@@ -28,6 +29,15 @@ function getRegistrations(): Registration[] {
   } catch {
     return [];
   }
+}
+
+function courseColor(course?: string) {
+  if (!course) return "border-border/40 text-muted-foreground";
+  if (course.toLowerCase().includes("beginner"))
+    return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+  if (course.toLowerCase().includes("intermediate"))
+    return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
+  return "bg-blue-500/20 text-blue-400 border-blue-500/30";
 }
 
 export function AdminUsers() {
@@ -53,7 +63,8 @@ export function AdminUsers() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {registrations.length} registered user
-            {registrations.length !== 1 ? "s" : ""}
+            {registrations.length !== 1 ? "s" : ""} &bull;{" "}
+            {registrations.filter((r) => r.enrolledCourse).length} enrolled
           </p>
         </div>
 
@@ -95,8 +106,9 @@ export function AdminUsers() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Enrolled Course</TableHead>
                   <TableHead>Registered</TableHead>
-                  <TableHead>Assessment Score</TableHead>
+                  <TableHead>Assessment</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -111,7 +123,17 @@ export function AdminUsers() {
                       {reg.email}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {reg.phone || "—"}
+                      {reg.phone || "\u2014"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${courseColor(reg.enrolledCourse)}`}
+                      >
+                        {reg.enrolledCourse
+                          ? reg.enrolledCourse.split("\u2014")[0].trim()
+                          : "Not enrolled"}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {reg.registeredAt
@@ -123,7 +145,7 @@ export function AdminUsers() {
                               year: "numeric",
                             },
                           )
-                        : "—"}
+                        : "\u2014"}
                     </TableCell>
                     <TableCell>
                       {reg.score !== undefined ? (
@@ -149,9 +171,13 @@ export function AdminUsers() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30"
+                        className={`text-xs ${
+                          reg.enrolledCourse
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                        }`}
                       >
-                        Registered
+                        {reg.enrolledCourse ? "Enrolled" : "Registered"}
                       </Badge>
                     </TableCell>
                   </TableRow>
