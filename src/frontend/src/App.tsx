@@ -6,6 +6,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  redirect,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Footer } from "./components/Footer";
@@ -13,7 +14,7 @@ import { Navbar } from "./components/Navbar";
 import { ProfileSetup } from "./components/ProfileSetup";
 import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
-import { useCallerUserProfile, useIsAdmin } from "./hooks/useQueries";
+import { useCallerUserProfile } from "./hooks/useQueries";
 import { AboutUs } from "./pages/AboutUs";
 import { Blog } from "./pages/Blog";
 import { Checkout } from "./pages/Checkout";
@@ -30,7 +31,11 @@ import { RefundPolicy } from "./pages/RefundPolicy";
 import { Register } from "./pages/Register";
 import { SelfAssessment } from "./pages/SelfAssessment";
 import { TermsOfUse } from "./pages/TermsOfUse";
-import { AdminPortal } from "./pages/admin/AdminPortal";
+import { AdminCourses } from "./pages/admin/AdminCourses";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminLogin } from "./pages/admin/AdminLogin";
+import { AdminSchedule } from "./pages/admin/AdminSchedule";
+import { AdminUsers } from "./pages/admin/AdminUsers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,20 +88,6 @@ function DashboardPage() {
   return <Dashboard />;
 }
 
-// Admin guard
-function AdminPage() {
-  const { data: isAdmin, isLoading } = useIsAdmin();
-  if (isLoading) return null;
-  if (!isAdmin) {
-    return (
-      <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">
-        <p>Access denied. Admin privileges required.</p>
-      </div>
-    );
-  }
-  return <AdminPortal />;
-}
-
 // Router
 const rootRoute = createRootRoute({ component: RootLayout });
 
@@ -128,12 +119,6 @@ const checkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/checkout",
   component: Checkout,
-});
-
-const adminRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: AdminPage,
 });
 
 // Static footer pages
@@ -203,13 +188,52 @@ const corporateTrainingRoute = createRoute({
   component: CorporateTraining,
 });
 
+// Admin routes
+const adminIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  beforeLoad: () => {
+    throw redirect({ to: "/admin/login" });
+  },
+  component: () => null,
+});
+
+const adminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/login",
+  component: AdminLogin,
+});
+
+const adminDashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/dashboard",
+  component: AdminDashboard,
+});
+
+const adminUsersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/users",
+  component: AdminUsers,
+});
+
+const adminCoursesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/courses",
+  component: AdminCourses,
+});
+
+const adminScheduleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/schedule",
+  component: AdminSchedule,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   coursesRoute,
   courseDetailRoute,
   dashboardRoute,
   checkoutRoute,
-  adminRoute,
   aboutRoute,
   termsRoute,
   refundRoute,
@@ -221,6 +245,12 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   corporateTrainingRoute,
   selfAssessmentRoute,
+  adminIndexRoute,
+  adminLoginRoute,
+  adminDashboardRoute,
+  adminUsersRoute,
+  adminCoursesRoute,
+  adminScheduleRoute,
 ]);
 
 const router = createRouter({ routeTree });

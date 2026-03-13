@@ -1,29 +1,30 @@
 # Alangh Academy
 
 ## Current State
-The platform has a home page with multiple sections, a registration page at `/register`, and various informational/course pages. The registration form captures Name, Email, Phone, Address, profile/work experience, and motivation. After successful submission, it currently shows a success message inline.
+The app has a single `/admin` route rendering `AdminPortal.tsx` with tabs for Users, Courses, and Enrollments. It is guarded by an `isAdmin` check via Internet Identity.
 
 ## Requested Changes (Diff)
 
 ### Add
-- New `/self-assessment` route and `SelfAssessment.tsx` page
-- Self-assessment section on the home page (Landing.tsx) with a brief description and a button linking to `/register`
-- 40-question data pool (all questions from Chapters 1-7) defined as a constant
-- Logic to randomly select 20 questions per attempt, ensuring no repeat questions from previous attempt (tracked in sessionStorage)
-- Multi-choice and single-choice question support
-- Scoring: pass = 16+ out of 20 correct
-- Pass state: success message + CTA to enroll in courses
-- Fail state: score display + option to retake (loads 20 NEW questions not from previous set)
+- `/admin/login` — Admin login page with username/password form. Uses localStorage-based session (hardcoded credentials: admin / alangh@2024). Redirects to `/admin/dashboard` on success.
+- `/admin/dashboard` — Overview page with stat cards: total registered users, total courses, upcoming sessions, recent registrations list.
+- `/admin/users` — Full user management table showing registrations from the public registration form (stored in localStorage), with columns: Name, Email, Phone, Registration Date, Self-Assessment Score. Includes search/filter.
+- `/admin/courses` — Course content management with list of all hardcoded courses (Beginner/Intermediate), ability to add notes or announcements per course (stored locally), and enrollment stats.
+- `/admin/schedule` — Training session scheduling page. Admins can add/edit/delete training sessions with fields: Session Title, Course, Date, Time, Mode (Online/Hybrid/Onsite), Max Participants, Description. Sessions stored in localStorage.
+- `AdminLayout` component — Shared sidebar layout for all admin pages with navigation links, Alangh Academy branding, logout button. Sidebar links: Dashboard, Users, Courses, Schedule. Does NOT use the main Navbar/Footer.
+- Admin routes added to App.tsx under `/admin/*` prefix, each protected by login session check.
 
 ### Modify
-- `Register.tsx`: after successful form submission, redirect user to `/self-assessment` instead of showing inline success message
-- `App.tsx`: add `selfAssessmentRoute` at path `/self-assessment`
+- `App.tsx` — Replace single `/admin` route with nested admin routes: `/admin/login`, `/admin/dashboard`, `/admin/users`, `/admin/courses`, `/admin/schedule`. The old AdminPortal route redirects to `/admin/login`.
 
 ### Remove
-- Nothing removed
+- Old single-tab `AdminPortal.tsx` replaced by the new multi-page system.
 
 ## Implementation Plan
-1. Create `src/frontend/src/pages/SelfAssessment.tsx` with full question bank (40 questions), random selection of 20, answer tracking, scoring, pass/fail states, retake logic using sessionStorage to avoid question repeats
-2. Update `App.tsx` to add the `/self-assessment` route
-3. Update `Register.tsx` to redirect to `/self-assessment` on successful submission
-4. Update `Landing.tsx` to add a self-assessment section with description and "Start Self-Assessment" button linking to `/register`
+1. Create `src/frontend/src/pages/admin/AdminLogin.tsx` — login form with localStorage session
+2. Create `src/frontend/src/pages/admin/AdminLayout.tsx` — sidebar layout with nav and logout
+3. Create `src/frontend/src/pages/admin/AdminDashboard.tsx` — stats overview
+4. Create `src/frontend/src/pages/admin/AdminUsers.tsx` — user management table
+5. Create `src/frontend/src/pages/admin/AdminCourses.tsx` — course management
+6. Create `src/frontend/src/pages/admin/AdminSchedule.tsx` — session scheduling CRUD
+7. Update `App.tsx` to wire all new admin routes
