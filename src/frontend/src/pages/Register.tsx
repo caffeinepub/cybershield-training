@@ -4,15 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  BookOpen,
-  CheckCircle2,
-  ChevronRight,
-  Shield,
-  Star,
-} from "lucide-react";
+import { CheckCircle2, ChevronRight, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface FormData {
   name: string;
@@ -30,36 +24,9 @@ interface FormErrors {
   address?: string;
 }
 
-const COURSES = [
-  {
-    id: "beginner",
-    title: "HackStart™ — Beginner",
-    subtitle: "Zero to Foundations",
-    description:
-      "Perfect for those with no prior cybersecurity knowledge. Build solid foundations in networking, security concepts, and ethical hacking basics.",
-    chapters: 10,
-    duration: "3 months",
-    level: "Beginner",
-    color: "emerald",
-    icon: Shield,
-  },
-  {
-    id: "intermediate",
-    title: "CyberElevate™ — Intermediate",
-    subtitle: "Skills to Job-Ready",
-    description:
-      "For those with basic IT knowledge ready to go deeper. Master VAPT, SOC operations, threat hunting, and real-world incident response.",
-    chapters: 13,
-    duration: "4 months",
-    level: "Intermediate",
-    color: "cyan",
-    icon: Star,
-  },
-];
-
 export function Register() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"form" | "enroll" | "done">("form");
+  const [step, setStep] = useState<"form" | "done">("form");
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
@@ -69,17 +36,6 @@ export function Register() {
     reason: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  const [enrollError, setEnrollError] = useState("");
-
-  useEffect(() => {
-    if (step === "done") {
-      const timer = setTimeout(() => {
-        navigate({ to: "/self-assessment" });
-      }, 1800);
-      return () => clearTimeout(timer);
-    }
-  }, [step, navigate]);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -98,20 +54,9 @@ export function Register() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      setStep("enroll");
-    }
-  };
+    if (!validate()) return;
 
-  const handleEnroll = () => {
-    if (!selectedCourse) {
-      setEnrollError("Please select a course to continue.");
-      return;
-    }
-    const courseLabel =
-      COURSES.find((c) => c.id === selectedCourse)?.title ?? selectedCourse;
-
-    // Save registration + enrollment to localStorage
+    // Save registration to localStorage (no enrolledCourse yet)
     const existing: unknown[] = JSON.parse(
       localStorage.getItem("alangh_registrations") || "[]",
     );
@@ -123,7 +68,7 @@ export function Register() {
       profile: form.profile,
       reason: form.reason,
       registeredAt: new Date().toISOString(),
-      enrolledCourse: courseLabel,
+      enrolledCourse: "",
       score: undefined,
     };
     const idx = (existing as { email: string }[]).findIndex(
@@ -135,8 +80,12 @@ export function Register() {
       existing.push(newReg);
     }
     localStorage.setItem("alangh_registrations", JSON.stringify(existing));
+    sessionStorage.setItem("alangh_current_email", form.email);
 
     setStep("done");
+    setTimeout(() => {
+      navigate({ to: "/self-assessment" });
+    }, 1200);
   };
 
   const handleChange = (field: keyof FormData, value: string) => {
@@ -175,48 +124,9 @@ export function Register() {
             </h1>
             <p className="text-muted-foreground text-lg">
               Take the first step toward your cybersecurity career. Fill in your
-              details below and we'll be in touch.
+              details below to get started.
             </p>
           </div>
-
-          {/* Step indicator */}
-          {step !== "done" && (
-            <div className="flex items-center justify-center gap-3 mb-8">
-              {["Register", "Select Course"].map((label, i) => (
-                <div key={label} className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                      (i === 0 && step === "form") ||
-                      (i === 1 && step === "enroll")
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : i === 0 && step === "enroll"
-                          ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                          : "border-border/60 text-muted-foreground"
-                    }`}
-                  >
-                    {i === 0 && step === "enroll" ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <span
-                    className={`text-sm ${
-                      (i === 0 && step === "form") ||
-                      (i === 1 && step === "enroll")
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                  {i === 0 && (
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
 
           <AnimatePresence mode="wait">
             {/* STEP 1 — Registration form */}
@@ -428,7 +338,7 @@ export function Register() {
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
                           data-ocid="register.submit_button"
                         >
-                          Continue to Course Enrollment
+                          Register &amp; Take Self-Assessment
                           <ChevronRight className="w-4 h-4 ml-2" />
                         </Button>
                       </div>
@@ -438,138 +348,7 @@ export function Register() {
               </motion.div>
             )}
 
-            {/* STEP 2 — Course enrollment */}
-            {step === "enroll" && (
-              <motion.div
-                key="enroll"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.4 }}
-              >
-                <Card className="border-border/60 bg-card/60 shadow-cyber">
-                  <CardHeader>
-                    <CardTitle className="font-display text-2xl">
-                      Select Your Course
-                    </CardTitle>
-                    <p className="text-muted-foreground text-sm">
-                      Hi{" "}
-                      <span className="text-foreground font-medium">
-                        {form.name}
-                      </span>
-                      , choose the course that best matches your current level.
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {COURSES.map((course) => {
-                      const Icon = course.icon;
-                      const isSelected = selectedCourse === course.id;
-                      return (
-                        <button
-                          key={course.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCourse(course.id);
-                            setEnrollError("");
-                          }}
-                          className={`w-full text-left rounded-xl border-2 p-5 transition-all ${
-                            isSelected
-                              ? course.color === "emerald"
-                                ? "border-emerald-500 bg-emerald-500/10"
-                                : "border-cyan-400 bg-cyan-400/10"
-                              : "border-border/60 bg-secondary/20 hover:border-primary/40 hover:bg-secondary/40"
-                          }`}
-                          data-ocid={`register.course.${course.id}.card`}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div
-                              className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                course.color === "emerald"
-                                  ? "bg-emerald-500/15 border border-emerald-500/30"
-                                  : "bg-cyan-400/15 border border-cyan-400/30"
-                              }`}
-                            >
-                              <Icon
-                                className={`w-6 h-6 ${
-                                  course.color === "emerald"
-                                    ? "text-emerald-400"
-                                    : "text-cyan-400"
-                                }`}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-display font-bold text-lg">
-                                  {course.title}
-                                </h3>
-                                <span
-                                  className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
-                                    course.color === "emerald"
-                                      ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
-                                      : "border-cyan-400/40 text-cyan-400 bg-cyan-400/10"
-                                  }`}
-                                >
-                                  {course.level}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {course.description}
-                              </p>
-                              <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
-                                <span>
-                                  <BookOpen className="w-3 h-3 inline mr-1" />
-                                  {course.chapters} chapters
-                                </span>
-                                <span>⏱ {course.duration}</span>
-                              </div>
-                            </div>
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 transition-all ${
-                                isSelected
-                                  ? course.color === "emerald"
-                                    ? "border-emerald-500 bg-emerald-500"
-                                    : "border-cyan-400 bg-cyan-400"
-                                  : "border-border/60"
-                              }`}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
-
-                    {enrollError && (
-                      <p
-                        className="text-xs text-destructive"
-                        data-ocid="register.enroll.error_state"
-                      >
-                        {enrollError}
-                      </p>
-                    )}
-
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setStep("form")}
-                        className="border-border/60"
-                        data-ocid="register.enroll.back_button"
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        onClick={handleEnroll}
-                        size="lg"
-                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                        data-ocid="register.enroll.submit_button"
-                      >
-                        Confirm Enrollment
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* STEP 3 — Success */}
+            {/* Success / redirect */}
             {step === "done" && (
               <motion.div
                 key="success"
@@ -587,15 +366,13 @@ export function Register() {
                       <CheckCircle2 className="w-10 h-10 text-accent" />
                     </div>
                     <h2 className="font-display text-2xl font-bold mb-3 text-foreground">
-                      You're Enrolled!
+                      Registration Successful!
                     </h2>
                     <p className="text-muted-foreground text-lg leading-relaxed">
-                      Registration and course enrollment successful! Redirecting
-                      to your self-assessment...
+                      Welcome aboard! Redirecting you to the self-assessment...
                     </p>
                     <p className="text-sm text-muted-foreground mt-3">
-                      Preparing your personalized cybersecurity self-assessment.
-                      Please wait a moment...
+                      Please wait a moment.
                     </p>
                   </CardContent>
                 </Card>

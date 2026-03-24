@@ -1,4 +1,11 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -8,9 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users } from "lucide-react";
+import { Download, Eye, RefreshCw, Search, Users } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "./AdminLayout";
 
 interface Registration {
@@ -18,6 +25,8 @@ interface Registration {
   email: string;
   phone?: string;
   address?: string;
+  profile?: string;
+  reason?: string;
   registeredAt?: string;
   score?: number;
   enrolledCourse?: string;
@@ -40,9 +49,82 @@ function courseColor(course?: string) {
   return "bg-blue-500/20 text-blue-400 border-blue-500/30";
 }
 
+function DetailRow({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="text-sm text-foreground whitespace-pre-wrap">
+        {value?.trim() || (
+          <span className="text-muted-foreground italic">Not provided</span>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function escapeCsvField(value: string | undefined): string {
+  const str = value ?? "";
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function exportToCsv(registrations: Registration[]) {
+  const headers = [
+    "Name",
+    "Email",
+    "Phone",
+    "Address",
+    "Profile / Work Experience",
+    "Enrollment Reason",
+    "Enrolled Course",
+    "Assessment Score",
+    "Assessment Result",
+    "Registered On",
+  ];
+
+  const rows = registrations.map((r) => [
+    escapeCsvField(r.name),
+    escapeCsvField(r.email),
+    escapeCsvField(r.phone),
+    escapeCsvField(r.address),
+    escapeCsvField(r.profile),
+    escapeCsvField(r.reason),
+    escapeCsvField(
+      r.enrolledCourse ? r.enrolledCourse.split("\u2014")[0].trim() : "",
+    ),
+    r.score !== undefined ? `${String(r.score)}/20` : "Not taken",
+    r.score !== undefined ? (r.score >= 16 ? "Pass" : "Fail") : "Not taken",
+    r.registeredAt
+      ? new Date(r.registeredAt).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "",
+  ]);
+
+  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `alangh-academy-users-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function AdminUsers() {
   const [search, setSearch] = useState("");
-  const registrations = getRegistrations();
+  const [selected, setSelected] = useState<Registration | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+
+  useEffect(() => {
+    setRegistrations(getRegistrations());
+  }, []);
 
   const filtered = registrations.filter(
     (r) =>
@@ -68,16 +150,40 @@ export function AdminUsers() {
           </p>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-5 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 border-border/60 bg-secondary/30"
-            data-ocid="admin.users.search.input"
-          />
+        {/* Search + Export */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 border-border/60 bg-secondary/30"
+              data-ocid="admin.users.search.input"
+            />
+          </div>
+          {registrations.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 gap-2"
+              onClick={() => exportToCsv(registrations)}
+              data-ocid="admin.users.export.button"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 gap-2"
+            onClick={() => setRegistrations(getRegistrations())}
+            data-ocid="admin.users.refresh.button"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
         </div>
 
         {registrations.length === 0 ? (
@@ -110,13 +216,15 @@ export function AdminUsers() {
                   <TableHead>Registered</TableHead>
                   <TableHead>Assessment</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((reg) => (
+                {filtered.map((reg, idx) => (
                   <TableRow
                     key={reg.email}
                     className="border-border/40 hover:bg-secondary/20"
+                    data-ocid={`admin.users.row.${idx + 1}`}
                   >
                     <TableCell className="font-medium">{reg.name}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">
@@ -180,6 +288,18 @@ export function AdminUsers() {
                         {reg.enrolledCourse ? "Enrolled" : "Registered"}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                        onClick={() => setSelected(reg)}
+                        data-ocid={`admin.users.view.button.${idx + 1}`}
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        View
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -187,6 +307,131 @@ export function AdminUsers() {
           </div>
         )}
       </motion.div>
+
+      {/* User Detail Modal */}
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+      >
+        <DialogContent
+          className="max-w-lg border-border/60 bg-card"
+          data-ocid="admin.users.detail.modal"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">
+              User Details
+            </DialogTitle>
+          </DialogHeader>
+
+          {selected && (
+            <div className="space-y-5 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+              {/* Personal Info */}
+              <div className="rounded-lg border border-border/60 bg-secondary/20 p-4 space-y-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Personal Information
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <DetailRow label="Full Name" value={selected.name} />
+                  <DetailRow label="Email" value={selected.email} />
+                  <DetailRow label="Phone" value={selected.phone} />
+                  <DetailRow
+                    label="Registered On"
+                    value={
+                      selected.registeredAt
+                        ? new Date(selected.registeredAt).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )
+                        : undefined
+                    }
+                  />
+                </div>
+                <DetailRow
+                  label="Correspondence Address"
+                  value={selected.address}
+                />
+              </div>
+
+              {/* Background */}
+              <div className="rounded-lg border border-border/60 bg-secondary/20 p-4 space-y-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Background & Motivation
+                </p>
+                <DetailRow
+                  label="Profile / Work Experience"
+                  value={selected.profile}
+                />
+                <DetailRow
+                  label="Why they want to enroll"
+                  value={selected.reason}
+                />
+              </div>
+
+              {/* Enrollment & Assessment */}
+              <div className="rounded-lg border border-border/60 bg-secondary/20 p-4 space-y-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Enrollment & Assessment
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Enrolled Course
+                    </p>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${courseColor(selected.enrolledCourse)}`}
+                    >
+                      {selected.enrolledCourse
+                        ? selected.enrolledCourse.split("\u2014")[0].trim()
+                        : "Not enrolled"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Self-Assessment Score
+                    </p>
+                    {selected.score !== undefined ? (
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${
+                          selected.score >= 16
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                            : "bg-red-500/20 text-red-400 border-red-500/30"
+                        }`}
+                      >
+                        {selected.score}/20 &mdash;{" "}
+                        {selected.score >= 16 ? "Pass" : "Fail"}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-xs text-muted-foreground border-border/40"
+                      >
+                        Not taken
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelected(null)}
+                  className="border-border/60"
+                  data-ocid="admin.users.detail.close_button"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

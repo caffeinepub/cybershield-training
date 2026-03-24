@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { BookOpen, Calendar, ChevronRight, Users } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "./AdminLayout";
 
 interface Registration {
@@ -47,10 +48,15 @@ function courseColor(course?: string) {
 }
 
 export function AdminDashboard() {
-  const registrations = getRegistrations();
-  const sessions = getSessions();
-  const recent = registrations.slice(-5).reverse();
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [sessions, setSessions] = useState<unknown[]>([]);
 
+  useEffect(() => {
+    setRegistrations(getRegistrations());
+    setSessions(getSessions());
+  }, []);
+
+  const recent = registrations.slice(-5).reverse();
   const enrolledCount = registrations.filter((r) => r.enrolledCourse).length;
 
   const stats = [

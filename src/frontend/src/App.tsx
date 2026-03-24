@@ -26,9 +26,11 @@ import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
 import { Disclaimer } from "./pages/Disclaimer";
 import { Landing } from "./pages/Landing";
+import { Payment } from "./pages/Payment";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { RefundPolicy } from "./pages/RefundPolicy";
 import { Register } from "./pages/Register";
+import { SelectCourse } from "./pages/SelectCourse";
 import { SelfAssessment } from "./pages/SelfAssessment";
 import { TermsOfUse } from "./pages/TermsOfUse";
 import { AdminCourses } from "./pages/admin/AdminCourses";
@@ -121,6 +123,12 @@ const checkoutRoute = createRoute({
   component: Checkout,
 });
 
+const paymentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/payment",
+  component: Payment,
+});
+
 // Static footer pages
 const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -182,6 +190,12 @@ const selfAssessmentRoute = createRoute({
   component: SelfAssessment,
 });
 
+const selectCourseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/select-course",
+  component: SelectCourse,
+});
+
 const corporateTrainingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/corporate-training",
@@ -234,6 +248,7 @@ const routeTree = rootRoute.addChildren([
   courseDetailRoute,
   dashboardRoute,
   checkoutRoute,
+  paymentRoute,
   aboutRoute,
   termsRoute,
   refundRoute,
@@ -245,6 +260,7 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   corporateTrainingRoute,
   selfAssessmentRoute,
+  selectCourseRoute,
   adminIndexRoute,
   adminLoginRoute,
   adminDashboardRoute,

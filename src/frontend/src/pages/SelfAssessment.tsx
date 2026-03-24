@@ -648,14 +648,14 @@ export function SelfAssessment() {
                       expertise, gain hands-on lab experience, and become
                       job-ready in the cybersecurity field.
                     </p>
-                    <Link to="/courses">
+                    <Link to="/select-course">
                       <Button
                         size="lg"
                         className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold px-8"
-                        data-ocid="self_assessment.courses_button"
+                        data-ocid="self_assessment.select_course_button"
                       >
-                        <BookOpen className="w-5 h-5 mr-2" />
-                        Browse Our Courses
+                        <ArrowRight className="w-5 h-5 mr-2" />
+                        Choose Your Course
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </Button>
                     </Link>

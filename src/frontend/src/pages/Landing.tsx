@@ -30,7 +30,6 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { Level, useAllCourses } from "../hooks/useQueries";
 
 const LEVEL_COLORS: Record<Level, string> = {
@@ -209,7 +208,6 @@ const FAQS = [
 
 export function Landing() {
   const { data: courses, isLoading } = useAllCourses();
-  const { login, isLoggingIn, identity } = useInternetIdentity();
 
   return (
     <main>
@@ -274,29 +272,16 @@ export function Landing() {
                 </Button>
               </Link>
 
-              {identity ? (
-                <Link to="/courses">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-border/60 hover:border-primary/60"
-                    data-ocid="hero.secondary_button"
-                  >
-                    Browse Courses
-                  </Button>
-                </Link>
-              ) : (
+              <Link to="/courses">
                 <Button
                   size="lg"
                   variant="outline"
-                  onClick={login}
-                  disabled={isLoggingIn}
                   className="border-border/60 hover:border-primary/60"
-                  data-ocid="hero.login.button"
+                  data-ocid="hero.secondary_button"
                 >
-                  {isLoggingIn ? "Connecting..." : "Start Your Journey"}
+                  Browse Courses
                 </Button>
-              )}
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -900,29 +885,15 @@ export function Landing() {
                 This is your launchpad. Let's build your future.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
-                {identity ? (
-                  <Link to="/courses">
-                    <Button
-                      size="lg"
-                      className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                      data-ocid="cta.primary_button"
-                    >
-                      Start Learning Today{" "}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                ) : (
+                <Link to="/register">
                   <Button
                     size="lg"
-                    onClick={login}
-                    disabled={isLoggingIn}
                     className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                    data-ocid="cta.login.button"
+                    data-ocid="cta.primary_button"
                   >
-                    {isLoggingIn ? "Connecting..." : "Start Learning Today"}
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    Start Learning Today <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                )}
+                </Link>
                 <Link to="/register">
                   <Button
                     size="lg"
