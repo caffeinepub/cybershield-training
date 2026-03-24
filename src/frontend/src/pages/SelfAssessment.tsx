@@ -643,22 +643,19 @@ export function SelfAssessment() {
                       cybersecurity principles.
                     </p>
                     <p className="text-muted-foreground leading-relaxed mb-8 max-w-lg mx-auto">
-                      Your results show you're ready to take the next step.
-                      Enroll in one of our structured courses to deepen your
-                      expertise, gain hands-on lab experience, and become
-                      job-ready in the cybersecurity field.
+                      Our team will review your results and reach out to you
+                      with enrollment details for the Beginner course. We look
+                      forward to starting this journey with you!
                     </p>
-                    <Link to="/select-course">
-                      <Button
-                        size="lg"
-                        className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold px-8"
-                        data-ocid="self_assessment.select_course_button"
-                      >
-                        <ArrowRight className="w-5 h-5 mr-2" />
-                        Choose Your Course
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </Link>
+                    <div
+                      className="bg-accent/10 border border-accent/30 rounded-lg px-6 py-4 inline-block"
+                      data-ocid="self_assessment.success_state"
+                    >
+                      <p className="text-accent font-semibold text-sm">
+                        ✓ Your assessment has been recorded. Expect to hear from
+                        us soon.
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (

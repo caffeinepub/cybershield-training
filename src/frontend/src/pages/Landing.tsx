@@ -39,9 +39,12 @@ const LEVEL_COLORS: Record<Level, string> = {
 };
 
 const COURSE_IMAGES: Record<Level, string> = {
-  [Level.beginner]: "/assets/generated/course-beginner.dim_400x200.png",
-  [Level.intermediate]: "/assets/generated/course-intermediate.dim_400x200.png",
-  [Level.advanced]: "/assets/generated/course-advanced.dim_400x200.png",
+  [Level.beginner]:
+    "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=800&h=400&fit=crop&auto=format",
+  [Level.intermediate]:
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop&auto=format",
+  [Level.advanced]:
+    "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=800&h=400&fit=crop&auto=format",
 };
 
 const STATS = [
@@ -49,25 +52,29 @@ const STATS = [
     value: "3.5 Million",
     label: "Unfilled cybersecurity jobs globally",
     icon: Users,
-    image: "/assets/generated/stat-jobs.dim_300x200.png",
+    image:
+      "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=600&h=400&fit=crop&auto=format",
   },
   {
     value: "₹6–25 LPA",
     label: "Average salary range in India",
     icon: TrendingUp,
-    image: "/assets/generated/stat-salary.dim_300x200.png",
+    image:
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop&auto=format",
   },
   {
     value: "0% Unemployment",
     label: "In the cybersecurity field",
     icon: Target,
-    image: "/assets/generated/stat-employment.dim_300x200.png",
+    image:
+      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=400&fit=crop&auto=format",
   },
   {
     value: "Every 39 sec",
     label: "A cyberattack occurs globally",
     icon: Zap,
-    image: "/assets/generated/stat-attack.dim_300x200.png",
+    image:
+      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&h=400&fit=crop&auto=format",
   },
 ];
 
@@ -89,37 +96,43 @@ const PERSONAS = [
     icon: Lightbulb,
     title: "The Curious Beginner",
     desc: "No tech background? No problem. Start from zero.",
-    image: "/assets/generated/persona-beginner.dim_240x180.png",
+    image:
+      "https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: Shield,
     title: "The IT Professional",
     desc: "Already in IT? Level up to cybersecurity roles.",
-    image: "/assets/generated/persona-it-pro.dim_240x180.png",
+    image:
+      "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: Route,
     title: "The Career Switcher",
     desc: "From any domain to cybersecurity. We'll show you how.",
-    image: "/assets/generated/persona-switcher.dim_240x180.png",
+    image:
+      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: GraduationCap,
     title: "The Student",
     desc: "Build skills before your first job. Stand out from day one.",
-    image: "/assets/generated/persona-student.dim_240x180.png",
+    image:
+      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: Home,
     title: "The Homemaker",
     desc: "Re-entering the workforce? Cybersecurity welcomes you.",
-    image: "/assets/generated/persona-homemaker.dim_240x180.png",
+    image:
+      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: BriefcaseBusiness,
     title: "The Working Professional",
     desc: "Upskill on your own schedule. 5–10 hrs/week is enough.",
-    image: "/assets/generated/persona-professional.dim_240x180.png",
+    image:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=480&h=360&fit=crop&auto=format",
   },
 ];
 
@@ -130,7 +143,8 @@ const PATHS = [
     badge: "Start Here",
     badgeClass: "bg-accent/20 text-accent border-accent/40",
     borderClass: "hover:border-accent/60",
-    image: "/assets/generated/path-beginner.dim_400x200.png",
+    image:
+      "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=800&h=400&fit=crop&auto=format",
   },
   {
     title: "Intermediate Path",
@@ -138,7 +152,8 @@ const PATHS = [
     badge: "Level Up",
     badgeClass: "bg-primary/20 text-primary border-primary/40",
     borderClass: "hover:border-primary/60",
-    image: "/assets/generated/path-intermediate.dim_400x200.png",
+    image:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop&auto=format",
   },
   {
     title: "Advanced Path",
@@ -146,7 +161,8 @@ const PATHS = [
     badge: "Go Deep",
     badgeClass: "bg-destructive/20 text-destructive border-destructive/40",
     borderClass: "hover:border-destructive/60",
-    image: "/assets/generated/path-advanced.dim_400x200.png",
+    image:
+      "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=800&h=400&fit=crop&auto=format",
   },
 ];
 
@@ -214,12 +230,12 @@ export function Landing() {
       {/* Section 1: Hero */}
       <section className="relative overflow-hidden min-h-[90vh] flex items-center">
         <img
-          src="/assets/generated/cyber-hero-bg.dim_1920x1080.jpg"
+          src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1920&h=1080&fit=crop&auto=format"
           alt=""
           className="absolute inset-0 w-full h-full object-cover opacity-30"
         />
         <div className="absolute inset-0 grid-bg opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background/80" />
         <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-accent/8 blur-3xl" />
 
@@ -397,7 +413,7 @@ export function Landing() {
                 <div className="relative z-10">
                   <div className="mb-6 rounded-xl overflow-hidden">
                     <img
-                      src="/assets/generated/path-beginner.dim_400x200.png"
+                      src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=320&fit=crop&auto=format"
                       alt="Cybersecurity learning path"
                       className="w-full h-[160px] object-cover rounded-xl"
                       style={{ animation: "float 4s ease-in-out infinite" }}
@@ -871,38 +887,41 @@ export function Landing() {
           >
             <div className="max-w-2xl mx-auto border border-primary/30 rounded-2xl p-12 bg-card/30 glow-cyan relative overflow-hidden">
               <div className="absolute inset-0 grid-bg opacity-20" />
-              <Shield
-                className="w-12 h-12 mx-auto mb-6 text-primary"
-                style={{ animation: "float 4s ease-in-out infinite" }}
-              />
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-                Ready to Start Your{" "}
-                <span className="text-primary glow-text">
-                  Cybersecurity Journey?
-                </span>
-              </h2>
-              <p className="text-muted-foreground mb-8 text-lg">
-                This is your launchpad. Let's build your future.
-              </p>
-              <div className="flex flex-wrap gap-4 justify-center">
-                <Link to="/register">
-                  <Button
-                    size="lg"
-                    className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                    data-ocid="cta.primary_button"
-                  >
-                    Start Learning Today <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button
-                    size="lg"
-                    className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold"
-                    data-ocid="cta.register.button"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" /> Register Now
-                  </Button>
-                </Link>
+              <div className="relative z-10">
+                <Shield
+                  className="w-12 h-12 mx-auto mb-6 text-primary"
+                  style={{ animation: "float 4s ease-in-out infinite" }}
+                />
+                <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+                  Ready to Start Your{" "}
+                  <span className="text-primary glow-text">
+                    Cybersecurity Journey?
+                  </span>
+                </h2>
+                <p className="text-muted-foreground mb-8 text-lg">
+                  This is your launchpad. Let's build your future.
+                </p>
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Link to="/register">
+                    <Button
+                      size="lg"
+                      className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
+                      data-ocid="cta.primary_button"
+                    >
+                      Start Learning Today{" "}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button
+                      size="lg"
+                      className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold"
+                      data-ocid="cta.register.button"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" /> Register Now
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </motion.div>

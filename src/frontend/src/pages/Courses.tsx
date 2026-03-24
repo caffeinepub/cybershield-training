@@ -54,28 +54,6 @@ const STATIC_COURSES = [
       "Cybersecurity Careers & Paths - SOC analyst, pen tester, GRC, cloud security roles and how to choose",
     ],
   },
-  {
-    id: 2n,
-    title: "Alangh Professional Cybersecurity Track (CyberElevate™)",
-    level: Level.intermediate,
-    description:
-      "Take your cybersecurity skills to the next level. Designed for learners who have completed foundational training and are ready for hands-on, role-specific skills.",
-    chapters: [
-      "Advanced Networking & Protocols - Subnetting, VLANs, routing protocols, packet analysis, network attacks",
-      "Linux for Security Professionals - Command line mastery, bash scripting, log analysis, hardening",
-      "Vulnerability Assessment - CVSS scoring, vulnerability scanners, patch management, risk prioritization",
-      "Web Application Penetration Testing - OWASP Top 10 deep dive, SQL injection, XSS, CSRF, tools",
-      "Network Penetration Testing - Recon, scanning, exploitation, lateral movement, pivoting",
-      "Active Directory Security - AD architecture, Kerberos attacks, BloodHound, privilege escalation",
-      "Malware Analysis Basics - Static vs dynamic analysis, sandboxing, reverse engineering intro",
-      "Cloud Security Fundamentals - AWS/Azure/GCP security, IAM, misconfiguration risks, cloud attacks",
-      "SIEM & Log Analysis - Splunk/ELK basics, use cases, alert tuning, incident correlation",
-      "Threat Intelligence - IOCs, threat feeds, MITRE ATT&CK framework, threat hunting basics",
-      "Governance, Risk & Compliance (GRC) - ISO 27001, GDPR, PCI-DSS, risk frameworks, audit basics",
-      "Security Architecture & Design - Zero trust, defense in depth, secure SDLC, architecture review",
-      "Capstone Project & Career Prep - Real-world project, portfolio building, interview prep, job strategy",
-    ],
-  },
 ];
 
 export function Courses() {
