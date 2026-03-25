@@ -123,7 +123,14 @@ export function AdminUsers() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
 
   useEffect(() => {
-    setRegistrations(getRegistrations());
+    const refresh = () => setRegistrations(getRegistrations());
+    refresh();
+    window.addEventListener("storage", refresh);
+    window.addEventListener("alanghUserChanged", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("alanghUserChanged", refresh);
+    };
   }, []);
 
   const filtered = registrations.filter(

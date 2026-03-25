@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -6,22 +5,19 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
-import { ProfileSetup } from "./components/ProfileSetup";
-import { InternetIdentityProvider } from "./hooks/useInternetIdentity";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
-import { useCallerUserProfile } from "./hooks/useQueries";
 import { AboutUs } from "./pages/AboutUs";
 import { Blog } from "./pages/Blog";
+import { Certificate } from "./pages/Certificate";
 import { Checkout } from "./pages/Checkout";
 import { CodeOfConduct } from "./pages/CodeOfConduct";
 import { ContactUs } from "./pages/ContactUs";
 import { CorporateTraining } from "./pages/CorporateTraining";
 import { CourseDetail } from "./pages/CourseDetail";
+import { CourseLearn } from "./pages/CourseLearn";
 import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
 import { Disclaimer } from "./pages/Disclaimer";
@@ -34,65 +30,44 @@ import { Register } from "./pages/Register";
 import { SelectCourse } from "./pages/SelectCourse";
 import { SelfAssessment } from "./pages/SelfAssessment";
 import { TermsOfUse } from "./pages/TermsOfUse";
+import { UserProfile } from "./pages/UserProfile";
+import { AdminCertificates } from "./pages/admin/AdminCertificates";
 import { AdminCourses } from "./pages/admin/AdminCourses";
+import { AdminCoursesContent } from "./pages/admin/AdminCoursesContent";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminHomepage } from "./pages/admin/AdminHomepage";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminSchedule } from "./pages/admin/AdminSchedule";
+import { AdminTrainingContent } from "./pages/admin/AdminTrainingContent";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-// Root layout component
-function RootLayout() {
-  const { identity } = useInternetIdentity();
-  const { data: profile, isLoading: loadingProfile } = useCallerUserProfile();
-  const [showProfileSetup, setShowProfileSetup] = useState(false);
-
-  useEffect(() => {
-    if (identity && !loadingProfile && profile !== undefined) {
-      if (profile === null || !profile.name) {
-        setShowProfileSetup(true);
-      }
-    }
-  }, [identity, profile, loadingProfile]);
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <div className="flex-1">
-        <Outlet />
+const rootRoute = createRootRoute({
+  component: () => (
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <Navbar />
+        <div className="flex-1">
+          <Outlet />
+        </div>
+        <Footer />
       </div>
-      <Footer />
-      <ProfileSetup
-        open={showProfileSetup}
-        onComplete={() => setShowProfileSetup(false)}
+      <Toaster
+        position="top-right"
+        theme="dark"
+        toastOptions={{
+          classNames: {
+            toast:
+              "bg-card border border-border/60 text-foreground font-sans text-sm",
+            error: "border-destructive/40 text-destructive",
+            success: "border-accent/40",
+          },
+        }}
       />
-    </div>
-  );
-}
-
-// Auth guard for dashboard
-function DashboardPage() {
-  const { identity } = useInternetIdentity();
-  if (!identity) {
-    return (
-      <div className="container mx-auto px-4 py-20 text-center text-muted-foreground">
-        <p>Please log in to view your dashboard.</p>
-      </div>
-    );
-  }
-  return <Dashboard />;
-}
-
-// Router
-const rootRoute = createRootRoute({ component: RootLayout });
+    </QueryClientProvider>
+  ),
+});
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -108,14 +83,20 @@ const coursesRoute = createRoute({
 
 const courseDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/courses/$id",
+  path: "/course/$id",
   component: CourseDetail,
+});
+
+const courseLearnRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learn/$level",
+  component: CourseLearn,
 });
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/dashboard",
-  component: DashboardPage,
+  component: Dashboard,
 });
 
 const checkoutRoute = createRoute({
@@ -130,7 +111,18 @@ const paymentRoute = createRoute({
   component: Payment,
 });
 
-// Static footer pages
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: UserProfile,
+});
+
+const certificateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/certificate/$id",
+  component: Certificate,
+});
+
 const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/about",
@@ -209,14 +201,10 @@ const corporateTrainingRoute = createRoute({
   component: CorporateTraining,
 });
 
-// Admin routes
 const adminIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
-  beforeLoad: () => {
-    throw redirect({ to: "/admin/login" });
-  },
-  component: () => null,
+  component: AdminDashboard,
 });
 
 const adminLoginRoute = createRoute({
@@ -243,19 +231,46 @@ const adminCoursesRoute = createRoute({
   component: AdminCourses,
 });
 
+const adminCoursesContentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/courses-content",
+  component: AdminCoursesContent,
+});
+
 const adminScheduleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin/schedule",
   component: AdminSchedule,
 });
 
+const adminHomepageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/homepage",
+  component: AdminHomepage,
+});
+
+const adminTrainingContentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/training-content",
+  component: AdminTrainingContent,
+});
+
+const adminCertificatesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/certificates",
+  component: AdminCertificates,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   coursesRoute,
   courseDetailRoute,
+  courseLearnRoute,
   dashboardRoute,
   checkoutRoute,
   paymentRoute,
+  profileRoute,
+  certificateRoute,
   aboutRoute,
   termsRoute,
   refundRoute,
@@ -274,7 +289,11 @@ const routeTree = rootRoute.addChildren([
   adminDashboardRoute,
   adminUsersRoute,
   adminCoursesRoute,
+  adminCoursesContentRoute,
   adminScheduleRoute,
+  adminHomepageRoute,
+  adminTrainingContentRoute,
+  adminCertificatesRoute,
 ]);
 
 const router = createRouter({ routeTree });
@@ -285,15 +304,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <InternetIdentityProvider>
-        <RouterProvider router={router} />
-        <Toaster richColors position="bottom-right" />
-      </InternetIdentityProvider>
-    </QueryClientProvider>
-  );
+export default function App() {
+  return <RouterProvider router={router} />;
 }
-
-export default App;

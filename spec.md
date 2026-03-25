@@ -1,30 +1,42 @@
 # Alangh Academy
 
 ## Current State
-The app has a single `/admin` route rendering `AdminPortal.tsx` with tabs for Users, Courses, and Enrollments. It is guarded by an `isAdmin` check via Internet Identity.
+- Login page asks for Full Name + Email Address, finds user by email match
+- Register page captures name, email, phone, address, profile, reason — no password
+- User passwords are not stored; authentication is identity-based (name+email lookup)
+- Build script calls `pnpm copy:env` which fails on Cloudflare (pnpm not available)
 
 ## Requested Changes (Diff)
 
 ### Add
-- `/admin/login` — Admin login page with username/password form. Uses localStorage-based session (hardcoded credentials: admin / alangh@2024). Redirects to `/admin/dashboard` on success.
-- `/admin/dashboard` — Overview page with stat cards: total registered users, total courses, upcoming sessions, recent registrations list.
-- `/admin/users` — Full user management table showing registrations from the public registration form (stored in localStorage), with columns: Name, Email, Phone, Registration Date, Self-Assessment Score. Includes search/filter.
-- `/admin/courses` — Course content management with list of all hardcoded courses (Beginner/Intermediate), ability to add notes or announcements per course (stored locally), and enrollment stats.
-- `/admin/schedule` — Training session scheduling page. Admins can add/edit/delete training sessions with fields: Session Title, Course, Date, Time, Mode (Online/Hybrid/Onsite), Max Participants, Description. Sessions stored in localStorage.
-- `AdminLayout` component — Shared sidebar layout for all admin pages with navigation links, Alangh Academy branding, logout button. Sidebar links: Dashboard, Users, Courses, Schedule. Does NOT use the main Navbar/Footer.
-- Admin routes added to App.tsx under `/admin/*` prefix, each protected by login session check.
+- Password field on registration form with real-time policy feedback
+- Confirm Password field on registration form with match validation
+- Password stored (hashed via btoa for client-side storage) alongside user record
+- Password field on login form
+- Password complexity policy: min 8 chars, uppercase, lowercase, number, special character
+- Visual password strength indicator on registration
+- Show/hide password toggle on both password fields
 
 ### Modify
-- `App.tsx` — Replace single `/admin` route with nested admin routes: `/admin/login`, `/admin/dashboard`, `/admin/users`, `/admin/courses`, `/admin/schedule`. The old AdminPortal route redirects to `/admin/login`.
+- Register.tsx: add password + confirm password fields; validate policy before submit; store password hash with user
+- Login.tsx: replace Full Name field with Password field; authenticate by email + password match
+- package.json: fix build script — replace `vite build && pnpm copy:env` with a node-based copy that works everywhere
+- vite.config.ts: handle env.json copy via plugin so no shell command needed
 
 ### Remove
-- Old single-tab `AdminPortal.tsx` replaced by the new multi-page system.
+- Full Name field from Login page (login now uses email + password)
+- Name-based lookup fallback in login
 
 ## Implementation Plan
-1. Create `src/frontend/src/pages/admin/AdminLogin.tsx` — login form with localStorage session
-2. Create `src/frontend/src/pages/admin/AdminLayout.tsx` — sidebar layout with nav and logout
-3. Create `src/frontend/src/pages/admin/AdminDashboard.tsx` — stats overview
-4. Create `src/frontend/src/pages/admin/AdminUsers.tsx` — user management table
-5. Create `src/frontend/src/pages/admin/AdminCourses.tsx` — course management
-6. Create `src/frontend/src/pages/admin/AdminSchedule.tsx` — session scheduling CRUD
-7. Update `App.tsx` to wire all new admin routes
+1. Fix build script in package.json: change `build` to `vite build && node -e "require('fs').copyFileSync('env.json','dist/env.json')"` — works on any environment without pnpm
+2. Update Register.tsx:
+   - Add `password` and `confirmPassword` fields to form state
+   - Add password policy validation helper (uppercase, lowercase, number, special char, min 8)
+   - Real-time policy checklist shown under password field
+   - Show/hide toggle for both password fields
+   - On submit, store password with user object (btoa encode for basic obfuscation)
+3. Update Login.tsx:
+   - Replace name field with password field
+   - Authenticate: find user by email, then verify password
+   - Show clear error if email not found vs password wrong
+   - Show/hide toggle for password field

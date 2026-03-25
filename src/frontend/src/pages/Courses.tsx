@@ -37,7 +37,7 @@ const LEVELS = [
 const STATIC_COURSES = [
   {
     id: 1n,
-    title: "Alangh Cybersecurity Foundation (HackStart™)",
+    title: "Alangh Cybersecurity Foundation (HackStart\u2122)",
     level: Level.beginner,
     description:
       "Build a rock-solid foundation in cybersecurity from zero. No IT background required. This structured program covers the essentials to get you job-aware and cyber-confident.",
@@ -56,6 +56,8 @@ const STATIC_COURSES = [
   },
 ];
 
+const COURSES_KEY = "alangh_courses_content";
+
 export function Courses() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -63,7 +65,28 @@ export function Courses() {
   const enrollMutation = useEnrollInCourse();
   const { identity } = useInternetIdentity();
 
-  const filtered = STATIC_COURSES.filter((c) => {
+  const [dynamicCourses] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(COURSES_KEY) || "[]");
+      if (saved && saved.length > 0) {
+        return STATIC_COURSES.map((c, i) =>
+          saved[i]
+            ? {
+                ...c,
+                title: saved[i].title || c.title,
+                description: saved[i].description || c.description,
+                chapters: saved[i].chapters || c.chapters,
+              }
+            : c,
+        );
+      }
+    } catch {
+      // ignore
+    }
+    return STATIC_COURSES;
+  });
+
+  const filtered = dynamicCourses.filter((c) => {
     const matchLevel = filter === "all" || c.level === filter;
     const matchSearch =
       !search ||
@@ -79,184 +102,206 @@ export function Courses() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        transition={{ duration: 0.5 }}
       >
-        <h1 className="font-display text-4xl font-bold mb-2">
-          Course <span className="text-primary glow-text">Catalog</span>
-        </h1>
-        <p className="text-muted-foreground">
-          Choose your path. Master cybersecurity at your pace.
-        </p>
-      </motion.div>
-
-      {/* Register Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mb-8 border border-primary/40 rounded-xl bg-primary/5 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-      >
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
-            <UserPlus className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">
-              Ready to begin your journey?
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Register now to secure your spot in our upcoming cybersecurity
-              training batches.
-            </p>
-          </div>
-        </div>
-        <Link to="/register" className="flex-shrink-0">
-          <Button
-            className="bg-primary text-primary-foreground hover:bg-primary/80 font-semibold whitespace-nowrap"
-            data-ocid="courses.register.button"
+        {/* Header */}
+        <div className="text-center mb-12">
+          <Badge
+            variant="outline"
+            className="border-primary/40 text-primary bg-primary/10 text-xs mb-4"
           >
-            Register Now <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </Link>
-      </motion.div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search courses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 border-border/60 focus-visible:ring-primary"
-            data-ocid="courses.search.input"
-          />
-        </div>
-        <Tabs value={filter} onValueChange={setFilter}>
-          <TabsList className="bg-secondary/50">
-            {LEVELS.map((level) => (
-              <TabsTrigger
-                key={level}
-                value={level}
-                className="capitalize data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                data-ocid={`courses.${level}.tab`}
-              >
-                {level === "all" ? "All" : level}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {isLoading ? (
-        <div
-          className="flex items-center justify-center py-20"
-          data-ocid="courses.loading_state"
-        >
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div
-          className="text-center py-20 text-muted-foreground"
-          data-ocid="courses.empty_state"
-        >
-          <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-display text-lg mb-1">
-            No courses match your filter
+            <Shield className="w-3 h-3 mr-1.5" /> Structured Learning Paths
+          </Badge>
+          <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+            Our{" "}
+            <span className="text-primary glow-text">Training Programs</span>
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Start with the Beginner course to build your cybersecurity
+            foundation. Advanced programs launching soon.
           </p>
-          <p className="text-sm">Try adjusting your search or filter.</p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((course, i) => (
-            <motion.div
-              key={course.id.toString()}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card
-                className="border-border/60 bg-card/50 hover:border-primary/40 transition-all duration-300 group flex flex-col h-full"
-                data-ocid={`courses.course.item.${i + 1}`}
-              >
-                <CardContent className="p-6 flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-3">
-                    <Badge
-                      variant="outline"
-                      className={`text-xs font-mono ${LEVEL_COLORS[course.level]}`}
-                    >
-                      {course.level.toUpperCase()}
-                    </Badge>
-                    {isEnrolled(course.id) && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs border-accent/40 bg-accent/10 text-accent"
-                      >
-                        Enrolled
-                      </Badge>
-                    )}
-                  </div>
-                  <h3 className="font-display font-semibold text-lg mb-2 line-clamp-2">
-                    {course.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                    {course.description}
-                  </p>
-                  <ul className="mb-5 space-y-1">
-                    {course.chapters.slice(0, 10).map((chapter) => (
-                      <li
-                        key={chapter}
-                        className="flex items-start gap-2 text-xs text-muted-foreground/80"
-                      >
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
-                        <span className="line-clamp-1">{chapter}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex gap-2 mt-auto flex-wrap">
-                    <Link
-                      to="/courses/$id"
-                      params={{ id: course.id.toString() }}
-                      className="flex-1"
-                    >
-                      <Button
-                        variant="outline"
-                        className="w-full border-border/60 hover:border-primary/60 group-hover:border-primary/40"
-                        data-ocid={`courses.view.button.${i + 1}`}
-                      >
-                        View <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </Link>
-                    {identity && !isEnrolled(course.id) && (
-                      <Button
-                        className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40"
-                        onClick={() => enrollMutation.mutate(course.id)}
-                        disabled={enrollMutation.isPending}
-                        data-ocid={`courses.enroll.button.${i + 1}`}
-                      >
-                        {enrollMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "Enroll"
-                        )}
-                      </Button>
-                    )}
-                    <Link to="/register">
-                      <Button
-                        variant="outline"
-                        className="border-accent/40 text-accent hover:bg-accent/10 whitespace-nowrap"
-                        data-ocid={`courses.card.register.button.${i + 1}`}
-                      >
-                        <UserPlus className="w-4 h-4 mr-1" /> Register
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
+          <Tabs
+            value={filter}
+            onValueChange={setFilter}
+            data-ocid="courses.filter.tab"
+          >
+            <TabsList className="bg-secondary/40 border border-border/60">
+              {LEVELS.map((l) => (
+                <TabsTrigger
+                  key={l}
+                  value={l}
+                  className="text-xs capitalize"
+                  data-ocid={`courses.${l}.tab`}
+                >
+                  {l === "all" ? "All Levels" : l}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search courses..."
+              className="pl-9 border-border/60 bg-secondary/20 text-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              data-ocid="courses.search_input"
+            />
+          </div>
         </div>
-      )}
+
+        {/* Course list */}
+        {filtered.length === 0 ? (
+          <div
+            className="text-center py-20 text-muted-foreground"
+            data-ocid="courses.empty_state"
+          >
+            <p>No courses match your search.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {filtered.map((course, idx) => {
+              const enrolled = isEnrolled(course.id);
+              return (
+                <motion.div
+                  key={String(course.id)}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.08 }}
+                  data-ocid={`courses.item.${idx + 1}`}
+                >
+                  <Card className="border-border/60 bg-card/60 hover:border-primary/40 transition-all group shadow-cyber">
+                    <CardContent className="p-0">
+                      <div className="p-6 md:p-8">
+                        {/* Top badge row */}
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs capitalize font-medium ${
+                              LEVEL_COLORS[course.level as Level]
+                            }`}
+                          >
+                            {course.level}
+                          </Badge>
+                          {enrolled && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs bg-accent/10 text-accent border-accent/30"
+                            >
+                              Enrolled
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h2 className="font-display text-2xl font-bold mb-3 group-hover:text-primary transition-colors">
+                          {course.title}
+                        </h2>
+
+                        {/* Description */}
+                        <p className="text-muted-foreground mb-6 leading-relaxed">
+                          {course.description}
+                        </p>
+
+                        {/* Chapters */}
+                        <div className="mb-6">
+                          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                            What You'll Learn ({course.chapters.length}{" "}
+                            Chapters)
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                            {course.chapters.map((chapter, i) => (
+                              <div
+                                key={`ch-${i}-${chapter.slice(0, 20)}`}
+                                className="flex gap-2 items-start text-sm"
+                              >
+                                <ChevronRight className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                <span className="text-muted-foreground">
+                                  {chapter}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap gap-3">
+                          {enrolled ? (
+                            <Link
+                              to="/learn/$level"
+                              params={{ level: "beginner" }}
+                            >
+                              <Button
+                                className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan gap-2"
+                                data-ocid={`courses.item.${idx + 1}.primary_button`}
+                              >
+                                Continue Learning
+                                <ArrowRight className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          ) : (
+                            <>
+                              {identity ? (
+                                <Button
+                                  className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan gap-2"
+                                  disabled={
+                                    enrollMutation.isPending || isLoading
+                                  }
+                                  onClick={() =>
+                                    enrollMutation.mutate(course.id)
+                                  }
+                                  data-ocid={`courses.item.${idx + 1}.primary_button`}
+                                >
+                                  {enrollMutation.isPending || isLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      Enroll Now
+                                      <ArrowRight className="w-4 h-4" />
+                                    </>
+                                  )}
+                                </Button>
+                              ) : (
+                                <Link to="/register">
+                                  <Button
+                                    className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan gap-2"
+                                    data-ocid={`courses.item.${idx + 1}.primary_button`}
+                                  >
+                                    <UserPlus className="w-4 h-4" />
+                                    Register to Enroll
+                                  </Button>
+                                </Link>
+                              )}
+                              <Link
+                                to="/course/$id"
+                                params={{ id: String(course.id) }}
+                              >
+                                <Button
+                                  variant="outline"
+                                  className="border-border/60 hover:border-primary/40"
+                                  data-ocid={`courses.item.${idx + 1}.secondary_button`}
+                                >
+                                  View Details
+                                </Button>
+                              </Link>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
     </main>
   );
 }

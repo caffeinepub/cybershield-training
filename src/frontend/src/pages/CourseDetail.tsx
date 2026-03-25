@@ -25,7 +25,7 @@ import {
 } from "../hooks/useQueries";
 
 export function CourseDetail() {
-  const { id } = useParams({ from: "/courses/$id" });
+  const { id } = useParams({ from: "/course/$id" });
   const courseId = BigInt(id);
 
   const { data: courses, isLoading: loadingCourses } = useAllCourses();

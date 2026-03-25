@@ -30,6 +30,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { Level, useAllCourses } from "../hooks/useQueries";
 
 const LEVEL_COLORS: Record<Level, string> = {
@@ -224,6 +225,21 @@ const FAQS = [
 
 export function Landing() {
   const { data: courses, isLoading } = useAllCourses();
+  const [homepageContent] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("alangh_homepage_content") || "null",
+      );
+    } catch {
+      return null;
+    }
+  });
+
+  const heroTagline = homepageContent?.hero?.tagline ?? null;
+  const heroSubTagline = homepageContent?.hero?.subTagline ?? null;
+  const activeStats = homepageContent?.stats ?? null;
+  const activeTestimonials = homepageContent?.testimonials ?? TESTIMONIALS;
+  const activeFaqs = homepageContent?.faqs ?? FAQS;
 
   return (
     <main>
@@ -252,19 +268,24 @@ export function Landing() {
             </Badge>
 
             <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.05] mb-6">
-              <span className="text-foreground">Cybersecurity isn't</span>
-              <br />
-              <span className="text-foreground">just for </span>
-              <span className="text-primary glow-text">hackers.</span>
-              <br />
-              <span className="text-foreground">It's for </span>
-              <span className="text-accent">everyone!</span>
+              {heroTagline ? (
+                <span className="text-foreground">{heroTagline}</span>
+              ) : (
+                <>
+                  <span className="text-foreground">Cybersecurity isn't</span>
+                  <br />
+                  <span className="text-foreground">just for </span>
+                  <span className="text-primary glow-text">hackers.</span>
+                  <br />
+                  <span className="text-foreground">It's for </span>
+                  <span className="text-accent">everyone!</span>
+                </>
+              )}
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed">
-              Whether you're curious about cybersecurity, switching careers, or
-              just getting started — we're here to guide you step-by-step, from
-              beginner to job-ready.
+              {heroSubTagline ??
+                "Whether you're curious about cybersecurity, switching careers, or just getting started — we're here to guide you step-by-step, from beginner to job-ready."}
             </p>
 
             <div className="flex flex-wrap gap-4">
@@ -325,7 +346,7 @@ export function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {STATS.map((stat, i) => (
+            {(activeStats ?? STATS).map((stat, i) => (
               <motion.div
                 key={stat.value}
                 initial={{ opacity: 0, y: 20 }}
@@ -619,7 +640,7 @@ export function Landing() {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.07 }}
                 >
-                  <Link to="/courses/$id" params={{ id: course.id.toString() }}>
+                  <Link to="/course/$id" params={{ id: course.id.toString() }}>
                     <Card
                       className="border-border/60 bg-card/50 hover:border-primary/40 hover:shadow-cyber transition-all duration-300 cursor-pointer h-full group overflow-hidden"
                       data-ocid={`landing.course.item.${i + 1}`}
@@ -685,7 +706,7 @@ export function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((testimonial, i) => (
+            {activeTestimonials.map((testimonial, i) => (
               <motion.div
                 key={testimonial.name}
                 initial={{ opacity: 0, y: 20 }}
@@ -751,7 +772,7 @@ export function Landing() {
               className="space-y-2"
               data-ocid="faq.panel"
             >
-              {FAQS.map((faq, i) => (
+              {activeFaqs.map((faq, i) => (
                 <AccordionItem
                   key={faq.q}
                   value={`faq-${i}`}

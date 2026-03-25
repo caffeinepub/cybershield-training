@@ -1,6 +1,10 @@
 import {
+  Award,
   BookOpen,
   Calendar,
+  Edit,
+  FileText,
+  Globe,
   LayoutDashboard,
   LogOut,
   Shield,
@@ -10,7 +14,15 @@ import { useEffect } from "react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  activePage: "dashboard" | "users" | "courses" | "schedule";
+  activePage:
+    | "dashboard"
+    | "users"
+    | "courses"
+    | "courses-content"
+    | "homepage"
+    | "training-content"
+    | "schedule"
+    | "certificates";
 }
 
 export function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -49,20 +61,48 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
       ocid: "admin.sidebar.courses.link",
     },
     {
+      key: "courses-content",
+      label: "Courses Content",
+      icon: Edit,
+      href: "/admin/courses-content",
+      ocid: "admin.sidebar.courses_content.link",
+    },
+    {
+      key: "homepage",
+      label: "Home Content",
+      icon: Globe,
+      href: "/admin/homepage",
+      ocid: "admin.sidebar.homepage.link",
+    },
+    {
+      key: "training-content",
+      label: "Training Resources",
+      icon: FileText,
+      href: "/admin/training-content",
+      ocid: "admin.sidebar.training.link",
+    },
+    {
       key: "schedule",
       label: "Schedule",
       icon: Calendar,
       href: "/admin/schedule",
       ocid: "admin.sidebar.schedule.link",
     },
+    {
+      key: "certificates",
+      label: "Certificates",
+      icon: Award,
+      href: "/admin/certificates",
+      ocid: "admin.sidebar.certificates.link",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="w-64 min-h-screen bg-card border-r border-border/60 flex flex-col fixed left-0 top-0 bottom-0 z-40">
+      <aside className="w-64 min-h-screen bg-card border-r border-border/60 flex flex-col fixed left-0 top-0 bottom-0 z-40 overflow-y-auto">
         {/* Brand */}
-        <div className="p-5 border-b border-border/60">
+        <div className="p-5 border-b border-border/60 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
               <Shield className="w-5 h-5 text-primary" />
@@ -99,7 +139,7 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-border/60">
+        <div className="p-3 border-t border-border/60 shrink-0">
           <button
             type="button"
             onClick={handleLogout}
@@ -113,7 +153,7 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 ml-64 p-8 min-h-screen">{children}</main>
+      <main className="flex-1 ml-64 min-h-screen">{children}</main>
     </div>
   );
 }

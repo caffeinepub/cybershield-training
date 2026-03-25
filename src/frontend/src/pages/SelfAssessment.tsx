@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "@tanstack/react-router";
 import {
-  ArrowRight,
-  BookOpen,
+  Award,
   CheckCircle2,
   RefreshCw,
   Shield,
@@ -490,6 +489,48 @@ function selectQuestions(prevIds: number[]): Question[] {
 
 const PASS_SCORE = 16;
 
+function getCurrentUser(): { id: string; name: string; email: string } | null {
+  try {
+    return JSON.parse(localStorage.getItem("alangh_current_user") || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveAssessmentResult(
+  user: { id: string; name: string; email: string },
+  score: number,
+  passed: boolean,
+) {
+  try {
+    const results: Array<{
+      userId: string;
+      userName: string;
+      userEmail: string;
+      score: number;
+      passed: boolean;
+      date: string;
+      attempt: number;
+    }> = JSON.parse(localStorage.getItem("alangh_assessment_results") || "[]");
+
+    const userAttempts = results.filter((r) => r.userId === user.id);
+    const attempt = userAttempts.length + 1;
+
+    results.push({
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      score,
+      passed,
+      date: new Date().toISOString(),
+      attempt,
+    });
+    localStorage.setItem("alangh_assessment_results", JSON.stringify(results));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function SelfAssessment() {
   const loadQuestions = useCallback(() => {
     const raw = sessionStorage.getItem("sa_prev_ids");
@@ -542,14 +583,20 @@ export function SelfAssessment() {
     setSubmitted(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // Persist score to the most recent registration in localStorage
+    const passed = correct >= PASS_SCORE;
+
+    // Save to new alangh_assessment_results schema
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      saveAssessmentResult(currentUser, correct, passed);
+    }
+
+    // Also persist score to legacy alangh_registrations for backward compat
     try {
       const regs: Array<Record<string, unknown>> = JSON.parse(
         localStorage.getItem("alangh_registrations") || "[]",
       );
       if (regs.length > 0) {
-        // Update the last registration that hasn't taken the assessment yet,
-        // or the most recently registered user.
         const targetIdx =
           regs.findIndex((r) => r.score === undefined) !== -1
             ? regs.findIndex((r) => r.score === undefined)
@@ -572,6 +619,24 @@ export function SelfAssessment() {
   };
 
   const passed = score >= PASS_SCORE;
+
+  // Check if user has a certificate
+  const currentUser = getCurrentUser();
+  const certificate = (() => {
+    if (!currentUser || !passed) return null;
+    try {
+      const certs: Array<{
+        certificateId: string;
+        userId: string;
+        revokedAt?: string;
+      }> = JSON.parse(localStorage.getItem("alangh_certificates") || "[]");
+      return (
+        certs.find((c) => c.userId === currentUser.id && !c.revokedAt) ?? null
+      );
+    } catch {
+      return null;
+    }
+  })();
 
   return (
     <main
@@ -647,15 +712,48 @@ export function SelfAssessment() {
                       with enrollment details for the Beginner course. We look
                       forward to starting this journey with you!
                     </p>
-                    <div
-                      className="bg-accent/10 border border-accent/30 rounded-lg px-6 py-4 inline-block"
-                      data-ocid="self_assessment.success_state"
-                    >
-                      <p className="text-accent font-semibold text-sm">
-                        ✓ Your assessment has been recorded. Expect to hear from
-                        us soon.
-                      </p>
-                    </div>
+
+                    {certificate ? (
+                      <Link
+                        to="/certificate/$id"
+                        params={{ id: certificate.certificateId }}
+                      >
+                        <Button
+                          size="lg"
+                          className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold px-8 mb-4"
+                          data-ocid="self_assessment.primary_button"
+                        >
+                          <Award className="w-5 h-5 mr-2" />
+                          Download Your Certificate
+                        </Button>
+                      </Link>
+                    ) : (
+                      <div
+                        className="bg-accent/10 border border-accent/30 rounded-lg px-6 py-4 inline-block"
+                        data-ocid="self_assessment.success_state"
+                      >
+                        <p className="text-accent font-semibold text-sm">
+                          ✓ Your assessment has been recorded. Your certificate
+                          will be issued by our team shortly. Check your profile
+                          for updates.
+                        </p>
+                      </div>
+                    )}
+
+                    {currentUser && (
+                      <div className="mt-5">
+                        <Link to="/profile">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-accent/40 text-accent hover:bg-accent/10"
+                            data-ocid="self_assessment.secondary_button"
+                          >
+                            View My Profile
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ) : (

@@ -4,13 +4,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, ChevronRight, Shield } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Shield,
+  XCircle,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 interface FormData {
   name: string;
   email: string;
+  password: string;
+  confirmPassword: string;
   phone: string;
   address: string;
   profile: string;
@@ -20,8 +29,63 @@ interface FormData {
 interface FormErrors {
   name?: string;
   email?: string;
+  password?: string;
+  confirmPassword?: string;
   phone?: string;
   address?: string;
+}
+
+interface PasswordPolicy {
+  minLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+  hasSpecial: boolean;
+}
+
+function checkPasswordPolicy(password: string): PasswordPolicy {
+  return {
+    minLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasSpecial: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password),
+  };
+}
+
+function isPolicyMet(policy: PasswordPolicy): boolean {
+  return (
+    policy.minLength &&
+    policy.hasUppercase &&
+    policy.hasLowercase &&
+    policy.hasNumber &&
+    policy.hasSpecial
+  );
+}
+
+function PolicyRow({
+  met,
+  label,
+}: {
+  met: boolean;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      {met ? (
+        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+      ) : (
+        <XCircle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+      )}
+      <span
+        className={`text-xs ${
+          met ? "text-green-500" : "text-muted-foreground"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
 }
 
 export function Register() {
@@ -30,12 +94,19 @@ export function Register() {
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     phone: "",
     address: "",
     profile: "",
     reason: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const policy = checkPasswordPolicy(form.password);
+  const policyMet = isPolicyMet(policy);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -44,6 +115,16 @@ export function Register() {
       newErrors.email = "Email is required.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = "Please enter a valid email address.";
+    }
+    if (!form.password) {
+      newErrors.password = "Password is required.";
+    } else if (!policyMet) {
+      newErrors.password = "Password must meet all requirements listed below.";
+    }
+    if (!form.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password.";
+    } else if (form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match.";
     }
     if (!form.phone.trim()) newErrors.phone = "Phone number is required.";
     if (!form.address.trim())
@@ -56,7 +137,11 @@ export function Register() {
     e.preventDefault();
     if (!validate()) return;
 
-    // Save registration to localStorage (no enrolledCourse yet)
+    const userId = `user_${Date.now()}`;
+    const registeredAt = new Date().toISOString();
+    const passwordHash = btoa(form.password);
+
+    // Save to legacy alangh_registrations for backward compat
     const existing: unknown[] = JSON.parse(
       localStorage.getItem("alangh_registrations") || "[]",
     );
@@ -67,9 +152,10 @@ export function Register() {
       address: form.address,
       profile: form.profile,
       reason: form.reason,
-      registeredAt: new Date().toISOString(),
+      registeredAt,
       enrolledCourse: "",
       score: undefined,
+      passwordHash,
     };
     const idx = (existing as { email: string }[]).findIndex(
       (r) => r.email === form.email,
@@ -80,7 +166,36 @@ export function Register() {
       existing.push(newReg);
     }
     localStorage.setItem("alangh_registrations", JSON.stringify(existing));
+
+    // Save to new alangh_users schema
+    const users: unknown[] = JSON.parse(
+      localStorage.getItem("alangh_users") || "[]",
+    );
+    const userObj = {
+      id: userId,
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
+      profile: form.profile,
+      reason: form.reason,
+      registeredAt,
+      passwordHash,
+    };
+    const userIdx = (users as { email: string }[]).findIndex(
+      (u) => u.email === form.email,
+    );
+    if (userIdx >= 0) {
+      (users as Record<string, unknown>[])[userIdx] = userObj;
+    } else {
+      users.push(userObj);
+    }
+    localStorage.setItem("alangh_users", JSON.stringify(users));
+
+    // Set current user and notify listeners
+    localStorage.setItem("alangh_current_user", JSON.stringify(userObj));
     sessionStorage.setItem("alangh_current_email", form.email);
+    window.dispatchEvent(new CustomEvent("alanghUserChanged"));
 
     setStep("done");
     setTimeout(() => {
@@ -166,12 +281,12 @@ export function Register() {
                               ? "border-destructive focus-visible:ring-destructive"
                               : ""
                           }`}
-                          data-ocid="register.name.input"
+                          data-ocid="register.input"
                         />
                         {errors.name && (
                           <p
                             className="text-xs text-destructive"
-                            data-ocid="register.name.error_state"
+                            data-ocid="register.error_state"
                           >
                             {errors.name}
                           </p>
@@ -200,16 +315,162 @@ export function Register() {
                               ? "border-destructive focus-visible:ring-destructive"
                               : ""
                           }`}
-                          data-ocid="register.email.input"
+                          data-ocid="register.input"
                         />
                         {errors.email && (
                           <p
                             className="text-xs text-destructive"
-                            data-ocid="register.email.error_state"
+                            data-ocid="register.error_state"
                           >
                             {errors.email}
                           </p>
                         )}
+                      </div>
+
+                      {/* Password */}
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="password"
+                          className="text-sm font-semibold"
+                        >
+                          Password <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create a strong password"
+                            value={form.password}
+                            onChange={(e) =>
+                              handleChange("password", e.target.value)
+                            }
+                            className={`border-border/60 focus-visible:ring-primary pr-10 ${
+                              errors.password
+                                ? "border-destructive focus-visible:ring-destructive"
+                                : ""
+                            }`}
+                            data-ocid="register.input"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            tabIndex={-1}
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Password policy checklist */}
+                        {form.password.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="bg-secondary/30 border border-border/40 rounded-lg p-3 space-y-1.5"
+                          >
+                            <p className="text-xs font-semibold text-muted-foreground mb-2">
+                              Password Requirements:
+                            </p>
+                            <PolicyRow
+                              met={policy.minLength}
+                              label="At least 8 characters"
+                            />
+                            <PolicyRow
+                              met={policy.hasUppercase}
+                              label="At least one uppercase letter (A-Z)"
+                            />
+                            <PolicyRow
+                              met={policy.hasLowercase}
+                              label="At least one lowercase letter (a-z)"
+                            />
+                            <PolicyRow
+                              met={policy.hasNumber}
+                              label="At least one number (0-9)"
+                            />
+                            <PolicyRow
+                              met={policy.hasSpecial}
+                              label="At least one special character (!@#$%^&*...)"
+                            />
+                          </motion.div>
+                        )}
+
+                        {errors.password && (
+                          <p
+                            className="text-xs text-destructive"
+                            data-ocid="register.error_state"
+                          >
+                            {errors.password}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="confirmPassword"
+                          className="text-sm font-semibold"
+                        >
+                          Confirm Password{" "}
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="confirmPassword"
+                            type={showConfirm ? "text" : "password"}
+                            placeholder="Re-enter your password"
+                            value={form.confirmPassword}
+                            onChange={(e) =>
+                              handleChange("confirmPassword", e.target.value)
+                            }
+                            className={`border-border/60 focus-visible:ring-primary pr-10 ${
+                              errors.confirmPassword
+                                ? "border-destructive focus-visible:ring-destructive"
+                                : form.confirmPassword &&
+                                    form.password === form.confirmPassword
+                                  ? "border-green-500/60"
+                                  : ""
+                            }`}
+                            data-ocid="register.input"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirm((v) => !v)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            tabIndex={-1}
+                            aria-label={
+                              showConfirm ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showConfirm ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                        {errors.confirmPassword && (
+                          <p
+                            className="text-xs text-destructive"
+                            data-ocid="register.error_state"
+                          >
+                            {errors.confirmPassword}
+                          </p>
+                        )}
+                        {!errors.confirmPassword &&
+                          form.confirmPassword &&
+                          form.password === form.confirmPassword && (
+                            <p className="text-xs text-green-500 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Passwords
+                              match
+                            </p>
+                          )}
                       </div>
 
                       {/* Phone */}
@@ -234,12 +495,12 @@ export function Register() {
                               ? "border-destructive focus-visible:ring-destructive"
                               : ""
                           }`}
-                          data-ocid="register.phone.input"
+                          data-ocid="register.input"
                         />
                         {errors.phone && (
                           <p
                             className="text-xs text-destructive"
-                            data-ocid="register.phone.error_state"
+                            data-ocid="register.error_state"
                           >
                             {errors.phone}
                           </p>
@@ -268,12 +529,12 @@ export function Register() {
                               ? "border-destructive focus-visible:ring-destructive"
                               : ""
                           }`}
-                          data-ocid="register.address.textarea"
+                          data-ocid="register.textarea"
                         />
                         {errors.address && (
                           <p
                             className="text-xs text-destructive"
-                            data-ocid="register.address.error_state"
+                            data-ocid="register.error_state"
                           >
                             {errors.address}
                           </p>
@@ -301,7 +562,7 @@ export function Register() {
                             handleChange("profile", e.target.value)
                           }
                           className="border-border/60 focus-visible:ring-primary resize-none"
-                          data-ocid="register.profile.textarea"
+                          data-ocid="register.textarea"
                         />
                       </div>
 
@@ -326,7 +587,7 @@ export function Register() {
                             handleChange("reason", e.target.value)
                           }
                           className="border-border/60 focus-visible:ring-primary resize-none"
-                          data-ocid="register.reason.textarea"
+                          data-ocid="register.textarea"
                         />
                       </div>
 

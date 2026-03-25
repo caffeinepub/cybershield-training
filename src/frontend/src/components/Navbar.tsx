@@ -1,20 +1,57 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, LogIn, Menu, Settings, X } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, LogIn, LogOut, Menu, Settings, User, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useIsAdmin } from "../hooks/useQueries";
+
+interface CurrentUser {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export function Navbar() {
   const { data: isAdmin } = useIsAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  useEffect(() => {
+    const read = () => {
+      try {
+        const raw = localStorage.getItem("alangh_current_user");
+        setCurrentUser(raw ? JSON.parse(raw) : null);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+    read();
+    window.addEventListener("storage", read);
+    window.addEventListener("alanghUserChanged", read);
+    return () => {
+      window.removeEventListener("storage", read);
+      window.removeEventListener("alanghUserChanged", read);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("alangh_current_user");
+    setCurrentUser(null);
+    window.dispatchEvent(new CustomEvent("alanghUserChanged"));
+    setMobileOpen(false);
+    window.location.href = "/";
+  };
 
   const navLinks = [
-    {
-      to: "/courses",
-      label: "Courses",
-      icon: BookOpen,
-      ocid: "nav.courses.link",
-    },
+    ...(!currentUser
+      ? [
+          {
+            to: "/courses",
+            label: "Courses",
+            icon: BookOpen,
+            ocid: "nav.courses.link",
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           {
@@ -40,7 +77,13 @@ export function Navbar() {
             src="/assets/Alangh_Logo.png"
             alt="Alangh Academy"
             className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
           />
+          <span className="font-bold text-foreground text-sm">
+            Alangh Academy
+          </span>
         </Link>
 
         {/* Desktop Nav */}
@@ -59,18 +102,45 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Auth Button */}
+        {/* Auth Buttons */}
         <div className="flex items-center gap-2">
-          <Link to="/login">
-            <Button
-              size="sm"
-              data-ocid="nav.login.button"
-              className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan"
-            >
-              <LogIn className="w-4 h-4 mr-1.5" />
-              Login
-            </Button>
-          </Link>
+          {currentUser ? (
+            <>
+              <Link to="/profile" data-ocid="nav.profile.link">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline max-w-[120px] truncate">
+                    {currentUser.name.split(" ")[0]}
+                  </span>
+                </Button>
+              </Link>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleLogout}
+                className="border-destructive/40 text-destructive hover:bg-destructive/10 gap-1.5"
+                data-ocid="nav.logout.button"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </>
+          ) : (
+            <Link to="/login">
+              <Button
+                size="sm"
+                data-ocid="nav.login.button"
+                className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan"
+              >
+                <LogIn className="w-4 h-4 mr-1.5" />
+                Login
+              </Button>
+            </Link>
+          )}
 
           {/* Mobile toggle */}
           <button
@@ -105,6 +175,36 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {currentUser ? (
+              <>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded text-sm text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  {currentUser.name.split(" ")[0]}'s Profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
+                  data-ocid="nav.mobile.logout.button"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </Link>
+            )}
           </nav>
         </div>
       )}

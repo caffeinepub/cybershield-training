@@ -74,7 +74,7 @@ function EnrolledCourseCard({
             </>
           )}
         </div>
-        <Link to="/courses/$id" params={{ id: course.id.toString() }}>
+        <Link to="/course/$id" params={{ id: course.id.toString() }}>
           <Button
             variant="outline"
             size="sm"
