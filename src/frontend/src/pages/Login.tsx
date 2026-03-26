@@ -8,14 +8,12 @@ import {
   ArrowLeft,
   BookOpen,
   Calendar,
-  CheckCircle2,
   ClipboardList,
   Eye,
   EyeOff,
   Lock,
   Shield,
   User,
-  XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -23,6 +21,7 @@ import { useState } from "react";
 interface Registration {
   id?: string;
   name: string;
+  username?: string;
   email: string;
   phone?: string;
   address?: string;
@@ -43,20 +42,19 @@ type LoginState =
 
 export function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginState, setLoginState] = useState<LoginState>("form");
   const [user, setUser] = useState<Registration | null>(null);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {},
-  );
+  const [errors, setErrors] = useState<{
+    username?: string;
+    password?: string;
+  }>({});
 
   function validate() {
-    const newErrors: { email?: string; password?: string } = {};
-    if (!email.trim()) newErrors.email = "Email address is required.";
-    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email))
-      newErrors.email = "Enter a valid email address.";
+    const newErrors: { username?: string; password?: string } = {};
+    if (!username.trim()) newErrors.username = "Username is required.";
     if (!password.trim()) newErrors.password = "Password is required.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -66,7 +64,7 @@ export function Login() {
     e.preventDefault();
     if (!validate()) return;
 
-    // Check new alangh_users first
+    // Check new alangh_users first (by username)
     const users: Registration[] = (() => {
       try {
         return JSON.parse(localStorage.getItem("alangh_users") || "[]");
@@ -75,15 +73,19 @@ export function Login() {
       }
     })();
     let match = users.find(
-      (u) => u.email.toLowerCase() === email.trim().toLowerCase(),
+      (u) =>
+        u.username &&
+        u.username.toLowerCase() === username.trim().toLowerCase(),
     );
 
-    // Fall back to legacy alangh_registrations
+    // Fall back to alangh_registrations
     if (!match) {
       const raw = localStorage.getItem("alangh_registrations");
       const registrations: Registration[] = raw ? JSON.parse(raw) : [];
       match = registrations.find(
-        (r) => r.email.toLowerCase() === email.trim().toLowerCase(),
+        (r) =>
+          r.username &&
+          r.username.toLowerCase() === username.trim().toLowerCase(),
       );
     }
 
@@ -92,186 +94,140 @@ export function Login() {
       return;
     }
 
-    // Account has no password stored (registered before password feature)
+    // Account has no password stored
     if (!match.passwordHash) {
       setLoginState("nopassword");
       return;
     }
 
-    // Wrong password
-    if (btoa(password) !== match.passwordHash) {
-      setErrors((prev) => ({
-        ...prev,
-        password: "Incorrect password. Please try again.",
-      }));
+    // Check password
+    const hash = btoa(password);
+    if (hash !== match.passwordHash) {
+      setLoginState("wrongpassword");
       return;
     }
 
     // Success
-    const userId =
-      match.id || `user_${match.email.replace(/[^a-z0-9]/gi, "_")}`;
-
-    // Enrich with latest assessment result
-    const results = (() => {
-      try {
-        return JSON.parse(
-          localStorage.getItem("alangh_assessment_results") || "[]",
-        ) as Array<{ userId: string; score: number; passed: boolean }>;
-      } catch {
-        return [];
-      }
-    })();
-    const userResults = results.filter((r) => r.userId === userId);
-    const bestScore =
-      userResults.length > 0
-        ? Math.max(...userResults.map((r) => r.score))
-        : undefined;
+    setUser(match);
+    setLoginState("found");
 
     const currentUser = {
-      id: userId,
+      id: match.id || `user_${Date.now()}`,
       name: match.name,
+      username: match.username,
       email: match.email,
-      phone: match.phone,
-      registeredAt: match.registeredAt,
-      assessmentScore: bestScore,
       enrolledCourse: match.enrolledCourse,
     };
     localStorage.setItem("alangh_current_user", JSON.stringify(currentUser));
+    sessionStorage.setItem("alangh_current_email", match.email);
     window.dispatchEvent(new CustomEvent("alanghUserChanged"));
 
-    const enrichedMatch = { ...match, assessmentScore: bestScore };
-    setUser(enrichedMatch);
-    setLoginState("found");
+    setTimeout(() => {
+      navigate({ to: "/profile" });
+    }, 1500);
   }
 
   function handleReset() {
     setLoginState("form");
-    setUser(null);
-    setEmail("");
+    setUsername("");
     setPassword("");
     setErrors({});
+    setUser(null);
   }
-
-  function handleGoToProfile() {
-    navigate({ to: "/profile" });
-  }
-
-  const passed =
-    user !== null &&
-    user !== undefined &&
-    typeof user.assessmentScore === "number" &&
-    user.assessmentScore >= 16;
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
-      {/* Background grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+    <main className="relative min-h-screen flex items-center justify-center py-16">
+      <div className="absolute inset-0 grid-bg opacity-20" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-72 h-72 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Back link */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-          data-ocid="login.link"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
-
+      <div className="container mx-auto px-4 relative z-10 max-w-md">
         <AnimatePresence mode="wait">
-          {loginState === "form" && (
+          {/* LOGIN FORM */}
+          {(loginState === "form" ||
+            loginState === "notfound" ||
+            loginState === "wrongpassword" ||
+            loginState === "nopassword") && (
             <motion.div
-              key="form"
+              key="login-form"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4 }}
             >
-              {/* Header */}
               <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-primary" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/30 mb-5">
+                  <Shield
+                    className="w-8 h-8 text-primary"
+                    style={{ animation: "float 4s ease-in-out infinite" }}
+                  />
                 </div>
-                <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-                  Welcome Back
+                <h1 className="font-display text-3xl font-bold mb-2">
+                  Welcome <span className="text-primary glow-text">Back</span>
                 </h1>
-                <p className="text-muted-foreground text-sm">
-                  Log in to view your assessment history and profile.
+                <p className="text-muted-foreground">
+                  Log in to your Alangh Academy account
                 </p>
               </div>
 
               <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
-                <CardContent className="pt-6">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold text-foreground/80">
+                    Sign In
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <form
                     onSubmit={handleSubmit}
-                    className="space-y-5"
-                    data-ocid="login.modal"
+                    className="space-y-4"
+                    data-ocid="login.form"
                   >
-                    {/* Email */}
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="login-email"
-                        className="text-foreground font-medium"
-                      >
-                        Email Address
-                      </Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="Enter your email address"
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          if (errors.email)
-                            setErrors((p) => ({ ...p, email: undefined }));
-                        }}
-                        className={`bg-background/60 border-border/60 focus:border-primary/60 ${
-                          errors.email ? "border-destructive" : ""
-                        }`}
-                        data-ocid="login.input"
-                      />
-                      {errors.email && (
-                        <p
-                          className="text-xs text-destructive"
-                          data-ocid="login.error_state"
-                        >
-                          {errors.email}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-username">Username</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="login-username"
+                          type="text"
+                          value={username}
+                          onChange={(e) => {
+                            setUsername(e.target.value);
+                            setErrors((p) => ({ ...p, username: undefined }));
+                            setLoginState("form");
+                          }}
+                          placeholder="Enter your username"
+                          className={`pl-9 border-border/60 bg-secondary/30 ${errors.username ? "border-destructive" : ""}`}
+                          data-ocid="login.username.input"
+                        />
+                      </div>
+                      {errors.username && (
+                        <p className="text-xs text-destructive">
+                          {errors.username}
                         </p>
                       )}
                     </div>
 
-                    {/* Password */}
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="login-password"
-                        className="text-foreground font-medium"
-                      >
-                        Password
-                      </Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="login-password">Password</Label>
                       <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="login-password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);
-                            if (errors.password)
-                              setErrors((p) => ({ ...p, password: undefined }));
+                            setErrors((p) => ({ ...p, password: undefined }));
+                            setLoginState("form");
                           }}
-                          className={`bg-background/60 border-border/60 focus:border-primary/60 pr-10 ${
-                            errors.password ? "border-destructive" : ""
-                          }`}
-                          data-ocid="login.input"
+                          placeholder="Enter your password"
+                          className={`pl-9 pr-10 border-border/60 bg-secondary/30 ${errors.password ? "border-destructive" : ""}`}
+                          data-ocid="login.password.input"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          tabIndex={-1}
-                          aria-label={
-                            showPassword ? "Hide password" : "Show password"
-                          }
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           {showPassword ? (
                             <EyeOff className="w-4 h-4" />
@@ -281,256 +237,154 @@ export function Login() {
                         </button>
                       </div>
                       {errors.password && (
-                        <p
-                          className="text-xs text-destructive"
-                          data-ocid="login.error_state"
-                        >
+                        <p className="text-xs text-destructive">
                           {errors.password}
                         </p>
                       )}
+                      <div className="text-right">
+                        <Link
+                          to="/forgot-password"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Forgot Password?
+                        </Link>
+                      </div>
                     </div>
+
+                    {/* Error states */}
+                    {loginState === "notfound" && (
+                      <div
+                        className="rounded-lg bg-destructive/10 border border-destructive/30 p-3"
+                        data-ocid="login.error_state"
+                      >
+                        <p className="text-sm text-destructive">
+                          No account found with that username. Please register
+                          to get started.
+                        </p>
+                        <Link
+                          to="/register"
+                          className="text-xs text-primary hover:underline mt-1 block"
+                        >
+                          Create an account →
+                        </Link>
+                      </div>
+                    )}
+                    {loginState === "wrongpassword" && (
+                      <div
+                        className="rounded-lg bg-destructive/10 border border-destructive/30 p-3"
+                        data-ocid="login.error_state"
+                      >
+                        <p className="text-sm text-destructive">
+                          Incorrect password. Please try again.
+                        </p>
+                      </div>
+                    )}
+                    {loginState === "nopassword" && (
+                      <div
+                        className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3"
+                        data-ocid="login.error_state"
+                      >
+                        <p className="text-sm text-amber-400">
+                          Your account was registered before password
+                          authentication was added. Please re-register to set a
+                          password.
+                        </p>
+                        <Link
+                          to="/register"
+                          className="text-xs text-primary hover:underline mt-1 block"
+                        >
+                          Re-register →
+                        </Link>
+                      </div>
+                    )}
 
                     <Button
                       type="submit"
-                      size="lg"
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
+                      className="w-full"
                       data-ocid="login.submit_button"
                     >
-                      <Lock className="w-4 h-4 mr-2" />
-                      Log In
+                      Sign In
                     </Button>
-                  </form>
 
-                  <div className="mt-6 pt-5 border-t border-border/40 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      New to Alangh Academy?{" "}
+                    <p className="text-center text-sm text-muted-foreground">
+                      Don't have an account?{" "}
                       <Link
                         to="/register"
-                        className="text-primary hover:underline font-medium"
-                        data-ocid="login.link"
+                        className="text-primary hover:underline"
                       >
                         Register here
                       </Link>
                     </p>
-                  </div>
+                  </form>
                 </CardContent>
               </Card>
             </motion.div>
           )}
 
+          {/* SUCCESS */}
           {loginState === "found" && user && (
             <motion.div
-              key="found"
-              initial={{ opacity: 0, scale: 0.97 }}
+              key="login-success"
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
+              transition={{ duration: 0.4 }}
+              className="text-center"
             >
-              <Card
-                className="border-accent/40 bg-card/80 backdrop-blur-sm"
-                data-ocid="login.success_state"
-              >
-                <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center mx-auto mb-3">
-                    <User className="w-8 h-8 text-accent" />
+              <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
+                <CardContent className="pt-10 pb-8 px-8">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-6">
+                    <Shield className="w-10 h-10 text-emerald-500" />
                   </div>
-                  <CardTitle className="font-display text-2xl text-foreground">
-                    Welcome back, {user.name}!
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    You&apos;re now logged in.
+                  <h2 className="font-display text-2xl font-bold mb-2">
+                    Welcome back, {user.name.split(" ")[0]}!
+                  </h2>
+                  <p className="text-muted-foreground mb-6">
+                    Login successful. Taking you to your profile...
                   </p>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  {/* Assessment result */}
-                  <div className="bg-secondary/40 border border-border/50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ClipboardList className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-semibold text-foreground">
-                        Self-Assessment
-                      </span>
-                    </div>
-
-                    {typeof user.assessmentScore === "number" ? (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Score
-                          </span>
-                          <span className="font-bold text-foreground">
-                            {user.assessmentScore} / 20
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Result
-                          </span>
-                          {passed ? (
-                            <Badge className="bg-accent/20 text-accent border-accent/40 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3" /> Passed
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-destructive/20 text-destructive border-destructive/40 flex items-center gap-1">
-                              <XCircle className="w-3 h-3" /> Not Passed
-                            </Badge>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No assessment taken yet.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Enrolled course */}
-                  {user.enrolledCourse && (
-                    <div className="bg-secondary/40 border border-border/50 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <BookOpen className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-semibold text-foreground">
-                          Enrolled Course
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {user.enrolledCourse}
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded-lg bg-secondary/40 p-3">
+                      <BookOpen className="w-5 h-5 text-primary mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">
+                        Course Access
                       </p>
                     </div>
-                  )}
-
-                  {/* Registration date */}
-                  <div className="bg-secondary/40 border border-border/50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-semibold text-foreground">
-                        Registered On
-                      </span>
+                    <div className="rounded-lg bg-secondary/40 p-3">
+                      <ClipboardList className="w-5 h-5 text-primary mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">
+                        Assessment History
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(user.registeredAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </p>
+                    <div className="rounded-lg bg-secondary/40 p-3">
+                      <Calendar className="w-5 h-5 text-primary mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">
+                        Progress Tracking
+                      </p>
+                    </div>
                   </div>
 
-                  <Button
-                    size="lg"
-                    onClick={handleGoToProfile}
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold mt-2"
-                    data-ocid="login.primary_button"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    View My Profile
-                  </Button>
+                  <div className="mt-6">
+                    <Badge
+                      variant="outline"
+                      className={`${
+                        user.enrolledCourse
+                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                          : "border-border/40 text-muted-foreground"
+                      }`}
+                    >
+                      {user.enrolledCourse
+                        ? `Enrolled: ${user.enrolledCourse}`
+                        : "No course enrolled yet"}
+                    </Badge>
+                  </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-border/50"
+                  <button
+                    type="button"
                     onClick={handleReset}
-                    data-ocid="login.secondary_button"
+                    className="mt-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mx-auto"
                   >
-                    Log in with a different account
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {loginState === "notfound" && (
-            <motion.div
-              key="notfound"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-            >
-              <Card
-                className="border-border/60 bg-card/80 backdrop-blur-sm text-center"
-                data-ocid="login.error_state"
-              >
-                <CardContent className="py-12 px-8">
-                  <div className="w-16 h-16 rounded-full bg-destructive/10 border-2 border-destructive/30 flex items-center justify-center mx-auto mb-5">
-                    <XCircle className="w-8 h-8 text-destructive" />
-                  </div>
-                  <h2 className="font-display text-2xl font-bold text-foreground mb-3">
-                    Account Not Found
-                  </h2>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-8 max-w-xs mx-auto">
-                    We couldn&apos;t find an account with that email address.
-                    Please register to get started.
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    <Link to="/register">
-                      <Button
-                        size="lg"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                        data-ocid="login.primary_button"
-                      >
-                        Register Now
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-border/50"
-                      onClick={handleReset}
-                      data-ocid="login.secondary_button"
-                    >
-                      Try a different email
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {loginState === "nopassword" && (
-            <motion.div
-              key="nopassword"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-            >
-              <Card
-                className="border-yellow-500/40 bg-card/80 backdrop-blur-sm text-center"
-                data-ocid="login.error_state"
-              >
-                <CardContent className="py-12 px-8">
-                  <div className="w-16 h-16 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-center mx-auto mb-5">
-                    <Shield className="w-8 h-8 text-yellow-500" />
-                  </div>
-                  <h2 className="font-display text-2xl font-bold text-foreground mb-3">
-                    Password Not Set
-                  </h2>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-8 max-w-xs mx-auto">
-                    Your account was created before passwords were added. Please
-                    re-register to set a password.
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    <Link to="/register">
-                      <Button
-                        size="lg"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
-                        data-ocid="login.primary_button"
-                      >
-                        Re-Register
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-border/50"
-                      onClick={handleReset}
-                      data-ocid="login.secondary_button"
-                    >
-                      Back to Login
-                    </Button>
-                  </div>
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back to login
+                  </button>
                 </CardContent>
               </Card>
             </motion.div>

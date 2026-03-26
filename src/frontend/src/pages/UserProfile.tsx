@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Table,
@@ -60,12 +60,30 @@ interface Certificate {
   revokedAt?: string;
 }
 
+interface Registration {
+  id?: string;
+  email: string;
+  name: string;
+  enrolledCourse?: string;
+}
+
 function load<T>(key: string, fallback: T): T {
   try {
     return JSON.parse(localStorage.getItem(key) || "null") ?? fallback;
   } catch {
     return fallback;
   }
+}
+
+// Map enrolledCourse label -> courseId used in /learn/$level
+function courseIdFromEnrolled(enrolled: string): string {
+  const lower = enrolled.toLowerCase();
+  if (lower.includes("beginner") || lower.includes("hackstart"))
+    return "beginner";
+  if (lower.includes("intermediate") || lower.includes("cyberelevate"))
+    return "intermediate";
+  if (lower.includes("advanced")) return "advanced";
+  return "beginner";
 }
 
 export function UserProfile() {
@@ -78,9 +96,11 @@ export function UserProfile() {
     [],
   );
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [assignedCourse, setAssignedCourse] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser) return;
+
     const results = (
       load("alangh_assessment_results", []) as AssessmentResult[]
     )
@@ -97,6 +117,11 @@ export function UserProfile() {
       (c) => c.userId === currentUser.id && !c.revokedAt,
     );
     setCertificates(certs);
+
+    // Get admin-assigned course from registration record
+    const registrations = load("alangh_registrations", []) as Registration[];
+    const myReg = registrations.find((r) => r.email === currentUser.email);
+    setAssignedCourse(myReg?.enrolledCourse || null);
   }, [currentUser]);
 
   if (!currentUser) {
@@ -222,8 +247,8 @@ export function UserProfile() {
                     color: "text-accent",
                   },
                   {
-                    label: "Courses Enrolled",
-                    value: courseProgresses.length,
+                    label: "Course Assigned",
+                    value: assignedCourse ? "Yes" : "No",
                     icon: BookOpen,
                     color: "text-blue-400",
                   },
@@ -351,95 +376,73 @@ export function UserProfile() {
               <h2 className="font-display text-lg font-semibold mb-4">
                 My Courses
               </h2>
-              {courseProgresses.length === 0 ? (
+
+              {!assignedCourse ? (
+                // No course assigned by admin yet
                 <div
                   className="text-center py-16"
                   data-ocid="profile.empty_state"
                 >
                   <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    You haven't started any courses yet.
+                  <p className="text-muted-foreground font-medium">
+                    No course assigned yet.
                   </p>
-                  <Link to="/courses" className="mt-4 inline-block">
-                    <Button
-                      size="sm"
-                      className="bg-primary text-primary-foreground hover:bg-primary/80 mt-4"
-                      data-ocid="profile.primary_button"
-                    >
-                      Browse Courses
-                    </Button>
-                  </Link>
+                  <p className="text-muted-foreground text-sm mt-2 max-w-sm mx-auto">
+                    Our team will review your assessment results and assign you
+                    to the appropriate course. You will see it here once
+                    assigned.
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-4" data-ocid="profile.list">
-                  {courseProgresses.map((cp, idx) => {
-                    const total = 10;
-                    const pct = Math.round(
-                      (cp.completedChapters.length / total) * 100,
-                    );
-                    const title =
-                      cp.courseId === "beginner"
-                        ? "Alangh Cybersecurity Foundation (HackStart\u2122)"
-                        : `${cp.courseId.charAt(0).toUpperCase() + cp.courseId.slice(1)} Course`;
-                    return (
-                      <Card
-                        key={cp.courseId}
-                        className="border-border/60 bg-card/60"
-                        data-ocid={`profile.item.${idx + 1}`}
-                      >
-                        <CardContent className="py-5 px-5">
-                          <div className="flex items-start justify-between gap-4 mb-3">
-                            <div>
-                              <p className="font-semibold text-sm">{title}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {cp.completedChapters.length} of {total}{" "}
-                                chapters completed
-                              </p>
-                            </div>
-                            <Link
-                              to="/learn/$level"
-                              params={{ level: cp.courseId }}
+                (() => {
+                  // Show the admin-assigned course
+                  const courseId = courseIdFromEnrolled(assignedCourse);
+                  const progress = courseProgresses.find(
+                    (p) => p.courseId === courseId,
+                  );
+                  const total = 10;
+                  const completed = progress?.completedChapters.length ?? 0;
+                  const pct = Math.round((completed / total) * 100);
+                  const courseLabel = assignedCourse.split("\u2014")[0].trim();
+
+                  return (
+                    <Card
+                      className="border-primary/30 bg-primary/5"
+                      data-ocid="profile.list"
+                    >
+                      <CardContent className="py-5 px-5">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div>
+                            <Badge
+                              variant="outline"
+                              className="mb-2 text-xs border-primary/40 text-primary bg-primary/10"
                             >
-                              <Button
-                                size="sm"
-                                className="bg-primary text-primary-foreground hover:bg-primary/80 shrink-0"
-                                data-ocid="profile.secondary_button"
-                              >
-                                Continue Learning
-                              </Button>
-                            </Link>
+                              Admin Assigned
+                            </Badge>
+                            <p className="font-semibold text-sm">
+                              {courseLabel}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {completed} of {total} chapters completed
+                            </p>
                           </div>
-                          <Progress value={pct} className="h-1.5" />
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-              {/* Quick start beginner if not started */}
-              {courseProgresses.find((c) => c.courseId === "beginner") ===
-                undefined && (
-                <Card className="border-primary/20 bg-primary/5 mt-4">
-                  <CardContent className="py-4 px-5 flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">
-                        Alangh Cybersecurity Foundation (HackStart\u2122)
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Beginner · 10 chapters
-                      </p>
-                    </div>
-                    <Link to="/learn/$level" params={{ level: "beginner" }}>
-                      <Button
-                        size="sm"
-                        className="bg-primary text-primary-foreground hover:bg-primary/80"
-                        data-ocid="profile.primary_button"
-                      >
-                        Start Course
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
+                          <Link to="/learn/$level" params={{ level: courseId }}>
+                            <Button
+                              size="sm"
+                              className="bg-primary text-primary-foreground hover:bg-primary/80 shrink-0"
+                              data-ocid="profile.primary_button"
+                            >
+                              {completed > 0
+                                ? "Continue Learning"
+                                : "Start Course"}
+                            </Button>
+                          </Link>
+                        </div>
+                        <Progress value={pct} className="h-1.5" />
+                      </CardContent>
+                    </Card>
+                  );
+                })()
               )}
             </motion.div>
           </TabsContent>

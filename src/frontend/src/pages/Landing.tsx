@@ -7,15 +7,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
+  Bell,
   BookOpen,
   BriefcaseBusiness,
   Building2,
+  CalendarDays,
   CheckCircle2,
-  ChevronRight,
+  DollarSign,
+  Globe,
   GraduationCap,
   Home,
   Layers,
@@ -31,53 +33,6 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { Level, useAllCourses } from "../hooks/useQueries";
-
-const LEVEL_COLORS: Record<Level, string> = {
-  [Level.beginner]: "bg-accent/20 text-accent border-accent/40",
-  [Level.intermediate]: "bg-primary/20 text-primary border-primary/40",
-  [Level.advanced]: "bg-destructive/20 text-destructive border-destructive/40",
-};
-
-const COURSE_IMAGES: Record<Level, string> = {
-  [Level.beginner]:
-    "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=800&h=400&fit=crop&auto=format",
-  [Level.intermediate]:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop&auto=format",
-  [Level.advanced]:
-    "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=800&h=400&fit=crop&auto=format",
-};
-
-const STATS = [
-  {
-    value: "3.5 Million",
-    label: "Unfilled cybersecurity jobs globally",
-    icon: Users,
-    image:
-      "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=600&h=400&fit=crop&auto=format",
-  },
-  {
-    value: "₹6–25 LPA",
-    label: "Average salary range in India",
-    icon: TrendingUp,
-    image:
-      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop&auto=format",
-  },
-  {
-    value: "0% Unemployment",
-    label: "In the cybersecurity field",
-    icon: Target,
-    image:
-      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=400&fit=crop&auto=format",
-  },
-  {
-    value: "Every 39 sec",
-    label: "A cyberattack occurs globally",
-    icon: Zap,
-    image:
-      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&h=400&fit=crop&auto=format",
-  },
-];
 
 const WHY_FEATURES = [
   {
@@ -86,19 +41,51 @@ const WHY_FEATURES = [
   },
   { icon: BookOpen, text: "Real-world projects and labs" },
   { icon: BriefcaseBusiness, text: "Industry-relevant role-based training" },
+  { icon: Lightbulb, text: "Personalized mentorship and career guidance" },
+];
+
+const DEFAULT_STATS = [
   {
-    icon: Lightbulb,
-    text: "Personalized mentorship and career guidance",
+    value: "$500+ Billion Industry",
+    label:
+      "The cybersecurity market is booming and projected to hit $538B by 2030. That means opportunities keep growing.",
+    icon: DollarSign,
+    image:
+      "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&h=400&fit=crop&auto=format",
+  },
+  {
+    value: "3.5M+ Open Roles",
+    label:
+      "There's a massive global talent gap. The good news? You don't need a tech background to get started.",
+    icon: Users,
+    image:
+      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&h=400&fit=crop&auto=format",
+  },
+  {
+    value: "High Pay, Real Impact",
+    label:
+      "With high demand comes strong salaries, job security, and the chance to do meaningful work that protects people and businesses.",
+    icon: TrendingUp,
+    image:
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop&auto=format",
+  },
+  {
+    value: "Future-Proof Your Career",
+    label:
+      "AI, cloud, and remote work are everywhere. Cybersecurity is no longer optional — every industry needs skilled professionals.",
+    icon: Target,
+    image:
+      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&h=400&fit=crop&auto=format",
   },
 ];
 
-const PERSONAS = [
+const DEFAULT_PERSONAS = [
   {
     icon: Lightbulb,
     title: "The Curious Beginner",
     desc: "No tech background? No problem. Start from zero.",
     image:
-      "https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?w=480&h=360&fit=crop&auto=format",
+      "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: Shield,
@@ -112,21 +99,21 @@ const PERSONAS = [
     title: "The Career Switcher",
     desc: "From any domain to cybersecurity. We'll show you how.",
     image:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=480&h=360&fit=crop&auto=format",
+      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: GraduationCap,
     title: "The Student",
     desc: "Build skills before your first job. Stand out from day one.",
     image:
-      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=480&h=360&fit=crop&auto=format",
+      "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: Home,
     title: "The Homemaker",
     desc: "Re-entering the workforce? Cybersecurity welcomes you.",
     image:
-      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=480&h=360&fit=crop&auto=format",
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=480&h=360&fit=crop&auto=format",
   },
   {
     icon: BriefcaseBusiness,
@@ -137,7 +124,7 @@ const PERSONAS = [
   },
 ];
 
-const PATHS = [
+const DEFAULT_PATHS = [
   {
     title: "Beginner Path",
     desc: "Zero to foundational cybersecurity skills. Perfect for non-tech backgrounds.",
@@ -167,7 +154,7 @@ const PATHS = [
   },
 ];
 
-const TESTIMONIALS = [
+const DEFAULT_TESTIMONIALS = [
   {
     quote:
       "I had zero tech background but Alangh Academy made everything so clear. Got my first SOC role in 8 months!",
@@ -188,7 +175,7 @@ const TESTIMONIALS = [
   },
 ];
 
-const FAQS = [
+const DEFAULT_FAQS = [
   {
     q: "Do I need a computer science degree to get into cybersecurity?",
     a: "No. Most entry-level roles in cybersecurity do not require a formal degree. Skills, certifications, and hands-on experience matter more. Many professionals enter the field with backgrounds in commerce, arts, or unrelated domains.",
@@ -203,7 +190,7 @@ const FAQS = [
   },
   {
     q: "How long will it take to become job-ready?",
-    a: "6–9 months on average, depending on your current knowledge level, the track you choose (Beginner / Intermediate / Advanced), and how much time you can dedicate weekly (5–10 hrs/week is typical).",
+    a: "6\u20139 months on average, depending on your current knowledge level, the track you choose (Beginner / Intermediate / Advanced), and how much time you can dedicate weekly (5\u201310 hrs/week is typical).",
   },
   {
     q: "What kinds of jobs can I get after this?",
@@ -211,7 +198,7 @@ const FAQS = [
   },
   {
     q: "Is this course only for students or freshers?",
-    a: "No. We train students, working professionals, career switchers, and homemakers re-entering the workforce. Anyone can join — as long as they're willing to learn.",
+    a: "No. We train students, working professionals, career switchers, and homemakers re-entering the workforce. Anyone can join \u2014 as long as they're willing to learn.",
   },
   {
     q: "Is this aligned with global standards or certifications?",
@@ -219,27 +206,51 @@ const FAQS = [
   },
   {
     q: "What makes Alangh Academy different?",
-    a: "Structured learning paths (Beginner → Intermediate → Advanced), real-world projects and labs, industry-relevant role-based training, personalized mentorship and career guidance.",
+    a: "Structured learning paths (Beginner \u2192 Intermediate \u2192 Advanced), real-world projects and labs, industry-relevant role-based training, personalized mentorship and career guidance.",
   },
 ];
 
-export function Landing() {
-  const { data: courses, isLoading } = useAllCourses();
-  const [homepageContent] = useState(() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem("alangh_homepage_content") || "null",
-      );
-    } catch {
-      return null;
-    }
-  });
+const DEFAULT_ANNOUNCEMENT = {
+  title: "Next Training Batch — Enrollments Open!",
+  subtitle: "HackStart\u2122 Beginner Cybersecurity Programme",
+  batchDate: "Batch Starts: August 2025",
+  details:
+    "Limited seats available. Register now to secure your spot in our upcoming beginner cybersecurity training cohort. Learn from industry experts, work on real-world labs, and start your journey to a career in cybersecurity.",
+  image:
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop&auto=format",
+};
 
-  const heroTagline = homepageContent?.hero?.tagline ?? null;
-  const heroSubTagline = homepageContent?.hero?.subTagline ?? null;
-  const activeStats = homepageContent?.stats ?? null;
-  const activeTestimonials = homepageContent?.testimonials ?? TESTIMONIALS;
-  const activeFaqs = homepageContent?.faqs ?? FAQS;
+function loadHomepageContent() {
+  try {
+    return (
+      JSON.parse(localStorage.getItem("alangh_homepage_content") || "null") ??
+      {}
+    );
+  } catch {
+    return {};
+  }
+}
+
+export function Landing() {
+  const [content] = useState(() => loadHomepageContent());
+
+  const heroTagline = content?.hero?.tagline ?? null;
+  const heroSubTagline = content?.hero?.subTagline ?? null;
+  const activeStats = content?.stats
+    ? content.stats.map(
+        (s: { value: string; label: string; image?: string }, i: number) => ({
+          ...DEFAULT_STATS[i],
+          value: s.value,
+          label: s.label,
+          image: s.image ?? DEFAULT_STATS[i]?.image,
+        }),
+      )
+    : DEFAULT_STATS;
+  const activePersonas = content?.personas ?? DEFAULT_PERSONAS;
+  const activePaths = content?.paths ?? DEFAULT_PATHS;
+  const activeTestimonials = content?.testimonials ?? DEFAULT_TESTIMONIALS;
+  const activeFaqs = content?.faqs ?? DEFAULT_FAQS;
+  const announcement = content?.announcement ?? DEFAULT_ANNOUNCEMENT;
 
   return (
     <main>
@@ -298,33 +309,12 @@ export function Landing() {
                   Explore Learning Paths <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
-
-              <Link to="/register">
-                <Button
-                  size="lg"
-                  className="bg-accent text-accent-foreground hover:bg-accent/80 font-semibold"
-                  data-ocid="hero.register.button"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" /> Register Now
-                </Button>
-              </Link>
-
-              <Link to="/courses">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-border/60 hover:border-primary/60"
-                  data-ocid="hero.secondary_button"
-                >
-                  Browse Courses
-                </Button>
-              </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Section 2: Career Stats */}
+      {/* Section 2: Career Stats / Why Cybersecurity */}
       <section className="py-20 bg-secondary/20">
         <div className="container mx-auto px-4">
           <motion.div
@@ -346,7 +336,7 @@ export function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(activeStats ?? STATS).map((stat, i) => (
+            {activeStats.map((stat: (typeof DEFAULT_STATS)[0], i: number) => (
               <motion.div
                 key={stat.value}
                 initial={{ opacity: 0, y: 20 }}
@@ -358,7 +348,7 @@ export function Landing() {
                   <div className="overflow-hidden">
                     <img
                       src={stat.image}
-                      alt={stat.label}
+                      alt={stat.value}
                       className="w-full h-[120px] object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
@@ -366,7 +356,7 @@ export function Landing() {
                     <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-4">
                       <stat.icon className="w-6 h-6 text-primary" />
                     </div>
-                    <p className="font-display text-2xl md:text-3xl font-bold text-primary mb-2">
+                    <p className="font-display text-lg md:text-xl font-bold text-primary mb-2">
                       {stat.value}
                     </p>
                     <p className="text-sm text-muted-foreground">
@@ -489,37 +479,42 @@ export function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PERSONAS.map((persona, i) => (
-              <motion.div
-                key={persona.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                data-ocid={`personas.item.${i + 1}`}
-              >
-                <Card className="border-border/60 bg-card/50 hover:border-primary/40 hover:bg-card transition-all duration-300 group h-full overflow-hidden">
-                  <div className="overflow-hidden">
-                    <img
-                      src={persona.image}
-                      alt={persona.title}
-                      className="w-full h-[120px] object-cover rounded-t-xl group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-all">
-                      <persona.icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <h3 className="font-display font-bold text-lg mb-2">
-                      {persona.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {persona.desc}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+            {activePersonas.map(
+              (persona: (typeof DEFAULT_PERSONAS)[0], i: number) => {
+                const IconComp = DEFAULT_PERSONAS[i]?.icon ?? Shield;
+                return (
+                  <motion.div
+                    key={persona.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    data-ocid={`personas.item.${i + 1}`}
+                  >
+                    <Card className="border-border/60 bg-card/50 hover:border-primary/40 hover:bg-card transition-all duration-300 group h-full overflow-hidden">
+                      <div className="overflow-hidden">
+                        <img
+                          src={persona.image}
+                          alt={persona.title}
+                          className="w-full h-[140px] object-cover rounded-t-xl group-hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+                      <CardContent className="p-6">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-all">
+                          <IconComp className="w-6 h-6 text-primary" />
+                        </div>
+                        <h3 className="font-display font-bold text-lg mb-2">
+                          {persona.title}
+                        </h3>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          {persona.desc}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              },
+            )}
           </div>
         </div>
       </section>
@@ -543,7 +538,7 @@ export function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PATHS.map((path, i) => (
+            {activePaths.map((path: (typeof DEFAULT_PATHS)[0], i: number) => (
               <motion.div
                 key={path.title}
                 initial={{ opacity: 0, y: 20 }}
@@ -582,7 +577,7 @@ export function Landing() {
                         className="w-full border-primary/40 text-primary hover:bg-primary/10"
                         data-ocid={`paths.explore.button.${i + 1}`}
                       >
-                        Explore Path <ChevronRight className="w-4 h-4 ml-1" />
+                        Explore Path <ArrowRight className="w-4 h-4 ml-1" />
                       </Button>
                     </Link>
                   </CardContent>
@@ -593,104 +588,71 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Course Preview */}
+      {/* Section 6: Announcement (replaces Featured Courses) */}
       <section className="py-24 bg-secondary/20">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex items-end justify-between mb-12 flex-wrap gap-4"
           >
-            <div>
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-2">
-                Featured <span className="text-primary glow-text">Courses</span>
-              </h2>
-              <p className="text-muted-foreground">
-                Curated learning paths for every stage of your journey.
-              </p>
-            </div>
-            <Link to="/courses" data-ocid="landing.view-all.link">
-              <Button
-                variant="outline"
-                className="border-primary/40 text-primary hover:bg-primary/10"
-              >
-                View All <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
-          </motion.div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Skeleton
-                  key={i}
-                  className="h-48 rounded-lg"
-                  data-ocid="landing.courses.loading_state"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(courses || []).slice(0, 6).map((course, i) => (
-                <motion.div
-                  key={course.id.toString()}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.07 }}
-                >
-                  <Link to="/course/$id" params={{ id: course.id.toString() }}>
-                    <Card
-                      className="border-border/60 bg-card/50 hover:border-primary/40 hover:shadow-cyber transition-all duration-300 cursor-pointer h-full group overflow-hidden"
-                      data-ocid={`landing.course.item.${i + 1}`}
-                    >
-                      <div className="overflow-hidden">
-                        <img
-                          src={COURSE_IMAGES[course.level]}
-                          alt={course.title}
-                          className="w-full h-[120px] object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                      <CardContent className="p-6 flex flex-col h-full">
-                        <div className="flex items-start justify-between mb-3">
-                          <Badge
-                            variant="outline"
-                            className={`text-xs font-mono ${LEVEL_COLORS[course.level]}`}
-                          >
-                            {course.level.toUpperCase()}
-                          </Badge>
-                        </div>
-                        <h3 className="font-display font-semibold mb-2 line-clamp-2">
-                          {course.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-3 flex-1">
-                          {course.description}
-                        </p>
-                        <div className="mt-4 flex items-center text-xs text-primary font-mono">
-                          View Course <ChevronRight className="w-3 h-3 ml-1" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </motion.div>
-              ))}
-
-              {(!courses || courses.length === 0) && (
-                <div
-                  className="col-span-3 text-center py-12 text-muted-foreground"
-                  data-ocid="landing.courses.empty_state"
-                >
-                  <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>Courses loading from the blockchain...</p>
+            <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-card/50 shadow-cyber group">
+              <div className="grid grid-cols-1 lg:grid-cols-2">
+                {/* Image */}
+                <div className="relative overflow-hidden">
+                  <img
+                    src={announcement.image}
+                    alt="Training Batch Announcement"
+                    className="w-full h-full min-h-[240px] object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/60 lg:block hidden" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent lg:hidden" />
                 </div>
-              )}
+                {/* Content */}
+                <div className="p-8 md:p-12 flex flex-col justify-center relative">
+                  <div className="absolute inset-0 grid-bg opacity-10" />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+                        <Bell className="w-4 h-4 text-primary" />
+                      </div>
+                      <Badge className="border-primary/40 bg-primary/10 text-primary font-mono text-xs tracking-widest">
+                        <span className="mr-1.5 w-1.5 h-1.5 rounded-full bg-primary inline-block animate-pulse" />
+                        ANNOUNCEMENT
+                      </Badge>
+                    </div>
+                    <h2 className="font-display text-2xl md:text-3xl font-bold mb-2">
+                      {announcement.title}
+                    </h2>
+                    <p className="text-primary font-semibold mb-1">
+                      {announcement.subtitle}
+                    </p>
+                    <div className="flex items-center gap-2 text-accent font-mono text-sm mb-4">
+                      <CalendarDays className="w-4 h-4" />
+                      {announcement.batchDate}
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed mb-6">
+                      {announcement.details}
+                    </p>
+                    <Link to="/register">
+                      <Button
+                        size="lg"
+                        className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan font-semibold"
+                        data-ocid="announcement.register.button"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" /> Register for This
+                        Batch
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+          </motion.div>
         </div>
       </section>
 
-      {/* Section 6: Testimonials */}
+      {/* Section 7: Testimonials */}
       <section className="py-24">
         <div className="container mx-auto px-4">
           <motion.div
@@ -706,45 +668,47 @@ export function Landing() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {activeTestimonials.map((testimonial, i) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                data-ocid={`testimonials.item.${i + 1}`}
-              >
-                <Card className="border-border/60 bg-card/50 hover:border-primary/40 transition-all duration-300 h-full">
-                  <CardContent className="p-8 flex flex-col h-full">
-                    <div className="flex gap-1 mb-4">
-                      {["1", "2", "3", "4", "5"].map((s) => (
-                        <Star
-                          key={s}
-                          className="w-4 h-4 fill-primary text-primary"
-                        />
-                      ))}
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed flex-1 mb-6 italic">
-                      "{testimonial.quote}"
-                    </p>
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {testimonial.name}
+            {activeTestimonials.map(
+              (testimonial: (typeof DEFAULT_TESTIMONIALS)[0], i: number) => (
+                <motion.div
+                  key={testimonial.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  data-ocid={`testimonials.item.${i + 1}`}
+                >
+                  <Card className="border-border/60 bg-card/50 hover:border-primary/40 transition-all duration-300 h-full">
+                    <CardContent className="p-8 flex flex-col h-full">
+                      <div className="flex gap-1 mb-4">
+                        {["1", "2", "3", "4", "5"].map((s) => (
+                          <Star
+                            key={s}
+                            className="w-4 h-4 fill-primary text-primary"
+                          />
+                        ))}
+                      </div>
+                      <p className="text-muted-foreground leading-relaxed flex-1 mb-6 italic">
+                        "{testimonial.quote}"
                       </p>
-                      <p className="text-xs text-primary font-mono">
-                        {testimonial.role}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {testimonial.name}
+                        </p>
+                        <p className="text-xs text-primary font-mono">
+                          {testimonial.role}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ),
+            )}
           </div>
         </div>
       </section>
 
-      {/* Section 7: FAQ */}
+      {/* Section 8: FAQ */}
       <section className="py-24 bg-secondary/20">
         <div className="container mx-auto px-4">
           <motion.div
@@ -772,7 +736,7 @@ export function Landing() {
               className="space-y-2"
               data-ocid="faq.panel"
             >
-              {activeFaqs.map((faq, i) => (
+              {activeFaqs.map((faq: (typeof DEFAULT_FAQS)[0], i: number) => (
                 <AccordionItem
                   key={faq.q}
                   value={`faq-${i}`}
@@ -867,7 +831,7 @@ export function Landing() {
                 </div>
                 <div className="flex-1 text-center md:text-left">
                   <Badge className="mb-4 border-accent/40 bg-accent/10 text-accent font-mono text-xs tracking-widest">
-                    ENTERPRISE & CORPORATE
+                    ENTERPRISE &amp; CORPORATE
                   </Badge>
                   <h2 className="font-display text-2xl md:text-3xl font-bold mb-4">
                     Scale Cybersecurity Skills{" "}
@@ -898,7 +862,7 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Section 8: Final CTA */}
+      {/* Final CTA */}
       <section className="py-24 bg-secondary/20">
         <div className="container mx-auto px-4 text-center">
           <motion.div

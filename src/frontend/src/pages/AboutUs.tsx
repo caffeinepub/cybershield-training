@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import {
   BookOpen,
   CheckCircle,
+  ChevronLeft,
   ChevronRight,
   Eye,
   Layers,
@@ -15,7 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -157,6 +158,101 @@ function PhilosophyIcon({
   if (iconKey === "map") return <MapIcon className={className} />;
   if (iconKey === "book") return <BookOpen className={className} />;
   return <Users className={className} />;
+}
+
+interface Leader {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  image: string;
+}
+
+function LeadersCarousel({ leaders }: { leaders: Leader[] }) {
+  const [idx, setIdx] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const visible = 3;
+  const maxIdx = Math.max(0, leaders.length - visible);
+
+  const scrollTo = (newIdx: number) => {
+    const clamped = Math.max(0, Math.min(newIdx, maxIdx));
+    setIdx(clamped);
+  };
+
+  return (
+    <div className="relative">
+      <div className="overflow-hidden" ref={containerRef}>
+        <div
+          className="flex gap-6 transition-transform duration-500"
+          style={{
+            transform: `translateX(calc(-${idx * (100 / visible)}% - ${idx * (24 / visible)}px))`,
+          }}
+        >
+          {leaders.map((leader) => (
+            <div
+              key={leader.id}
+              className="flex-shrink-0 w-[calc(33.333%-16px)] min-w-[260px]"
+            >
+              <Card className="border-border/60 bg-card/60 hover:border-primary/40 transition-all duration-300 h-full">
+                <CardContent className="p-6 text-center">
+                  <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-2 border-primary/30">
+                    <img
+                      src={leader.image}
+                      alt={leader.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&auto=format";
+                      }}
+                    />
+                  </div>
+                  <h3 className="font-display font-bold text-lg mb-1">
+                    {leader.name}
+                  </h3>
+                  <p className="text-primary text-sm font-mono mb-3">
+                    {leader.role}
+                  </p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {leader.bio}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </div>
+      {leaders.length > visible && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            type="button"
+            onClick={() => scrollTo(idx - 1)}
+            disabled={idx === 0}
+            className="w-10 h-10 rounded-full border border-border/60 bg-card/60 flex items-center justify-center hover:border-primary/40 hover:bg-primary/10 transition-all disabled:opacity-40"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex gap-2">
+            {Array.from({ length: maxIdx + 1 }, (_, i) => i).map((dotIdx) => (
+              <button
+                key={`dot-${dotIdx}`}
+                type="button"
+                onClick={() => scrollTo(dotIdx)}
+                className={`w-2 h-2 rounded-full transition-all ${dotIdx === idx ? "bg-primary w-4" : "bg-border"}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => scrollTo(idx + 1)}
+            disabled={idx >= maxIdx}
+            className="w-10 h-10 rounded-full border border-border/60 bg-card/60 flex items-center justify-center hover:border-primary/40 hover:bg-primary/10 transition-all disabled:opacity-40"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AboutUs() {
@@ -592,6 +688,50 @@ export function AboutUs() {
           </div>
         </motion.div>
       </section>
+
+      {/* Meet The Leaders */}
+      {(() => {
+        const defaultLeaders = [
+          {
+            id: "l1",
+            name: "Founder & CEO",
+            role: "Cybersecurity Expert",
+            bio: "Leading Alangh Academy with a vision to make cybersecurity accessible to everyone.",
+            image:
+              "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&auto=format",
+          },
+        ];
+        let leaders = defaultLeaders;
+        try {
+          const raw = localStorage.getItem("alangh_leaders_content");
+          if (raw) leaders = JSON.parse(raw);
+        } catch {}
+        if (leaders.length === 0) return null;
+        return (
+          <section className="py-24 bg-secondary/20">
+            <div className="container mx-auto px-4">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+              >
+                <motion.div variants={fadeUp} className="text-center mb-14">
+                  <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+                    Meet The{" "}
+                    <span className="text-primary glow-text">Leaders</span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                    The people behind Alangh Academy — passionate about making
+                    cybersecurity education accessible and impactful.
+                  </p>
+                </motion.div>
+                <LeadersCarousel leaders={leaders} />
+              </motion.div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* CTA */}
       <section className="py-24 relative overflow-hidden">

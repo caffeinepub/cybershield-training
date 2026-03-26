@@ -140,6 +140,7 @@ const TRAINING_AREAS = [
 export function CorporateTraining() {
   const formRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [form, setForm] = useState({
     fullName: "",
@@ -162,8 +163,41 @@ export function CorporateTraining() {
     );
   };
 
+  const PERSONAL_DOMAINS = [
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "aol.com",
+    "icloud.com",
+    "live.com",
+    "msn.com",
+    "me.com",
+    "mail.com",
+    "protonmail.com",
+    "ymail.com",
+    "rediffmail.com",
+    "inbox.com",
+    "zohomail.com",
+    "gmx.com",
+    "yandex.com",
+    "tutanota.com",
+  ];
+
+  const validateWorkEmail = (email: string): boolean => {
+    const domain = email.split("@")[1]?.toLowerCase() ?? "";
+    return !PERSONAL_DOMAINS.includes(domain);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateWorkEmail(form.email)) {
+      setEmailError(
+        "Please use a work email address. Personal email domains (Gmail, Yahoo, etc.) are not accepted.",
+      );
+      return;
+    }
+    setEmailError("");
     setSubmitted(true);
   };
 
@@ -521,16 +555,22 @@ export function CorporateTraining() {
                             type="email"
                             required
                             value={form.email}
-                            onChange={(e) =>
+                            className={`border-border/60 bg-background/50 focus:border-primary/60${emailError ? " border-destructive" : ""}`}
+                            placeholder="We'll send the proposal and follow-up here."
+                            data-ocid="corporate.email.input"
+                            onChange={(e) => {
                               setForm((prev) => ({
                                 ...prev,
                                 email: e.target.value,
-                              }))
-                            }
-                            className="border-border/60 bg-background/50 focus:border-primary/60"
-                            placeholder="We'll send the proposal and follow-up here."
-                            data-ocid="corporate.email.input"
+                              }));
+                              if (emailError) setEmailError("");
+                            }}
                           />
+                          {emailError && (
+                            <p className="text-xs text-destructive mt-1">
+                              {emailError}
+                            </p>
+                          )}
                         </div>
 
                         {/* Contact Number */}

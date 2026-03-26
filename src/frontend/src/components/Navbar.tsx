@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, LogIn, LogOut, Menu, Settings, User, X } from "lucide-react";
+import { LogIn, LogOut, Menu, Settings, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useIsAdmin } from "../hooks/useQueries";
 
@@ -42,16 +42,6 @@ export function Navbar() {
   };
 
   const navLinks = [
-    ...(!currentUser
-      ? [
-          {
-            to: "/courses",
-            label: "Courses",
-            icon: BookOpen,
-            ocid: "nav.courses.link",
-          },
-        ]
-      : []),
     ...(isAdmin
       ? [
           {
@@ -65,9 +55,12 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 backdrop-blur-xl bg-background/80">
+    <header
+      className="sticky top-0 z-50 border-b border-border/60 backdrop-blur-xl"
+      style={{ backgroundColor: "oklch(0.22 0.08 240 / 0.97)" }}
+    >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
+        {/* Logo only — no text */}
         <Link
           to="/"
           className="flex items-center gap-2 group"
@@ -76,14 +69,11 @@ export function Navbar() {
           <img
             src="/assets/Alangh_Logo.png"
             alt="Alangh Academy"
-            className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            className="h-12 w-auto object-contain group-hover:scale-105 transition-transform"
             onError={(e) => {
               e.currentTarget.style.display = "none";
             }}
           />
-          <span className="font-bold text-foreground text-sm">
-            Alangh Academy
-          </span>
         </Link>
 
         {/* Desktop Nav */}

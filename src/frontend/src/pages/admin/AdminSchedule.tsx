@@ -95,6 +95,113 @@ function courseColor(course?: string) {
   return "bg-blue-500/20 text-blue-400 border-blue-500/30";
 }
 
+// ── Extracted as a proper component so React does not remount inputs on every
+//    state update (which caused focus loss after each keystroke).
+function SessionFormFields({
+  form,
+  setForm,
+}: {
+  form: Omit<Session, "id">;
+  setForm: React.Dispatch<React.SetStateAction<Omit<Session, "id">>>;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="col-span-2 space-y-1.5">
+        <Label className="text-sm">Session Title</Label>
+        <Input
+          value={form.title}
+          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+          className="border-border/60 bg-secondary/30"
+          placeholder="e.g. Network Security Lab - Batch 3"
+          autoFocus
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm">Course</Label>
+        <Select
+          value={form.course}
+          onValueChange={(v) => setForm((f) => ({ ...f, course: v }))}
+        >
+          <SelectTrigger className="border-border/60 bg-secondary/30">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Beginner">Beginner (HackStart™)</SelectItem>
+            <SelectItem value="Intermediate">
+              Intermediate (CyberElevate™)
+            </SelectItem>
+            <SelectItem value="Corporate">Corporate Training</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm">Mode</Label>
+        <Select
+          value={form.mode}
+          onValueChange={(v) => setForm((f) => ({ ...f, mode: v }))}
+        >
+          <SelectTrigger className="border-border/60 bg-secondary/30">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Online">Online</SelectItem>
+            <SelectItem value="Hybrid">Hybrid</SelectItem>
+            <SelectItem value="Onsite">Onsite</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm">Date</Label>
+        <Input
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+          className="border-border/60 bg-secondary/30"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-sm">Time</Label>
+        <Input
+          type="time"
+          value={form.time}
+          onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+          className="border-border/60 bg-secondary/30"
+        />
+      </div>
+
+      <div className="col-span-2 space-y-1.5">
+        <Label className="text-sm">Max Participants</Label>
+        <Input
+          type="number"
+          value={form.maxParticipants}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, maxParticipants: e.target.value }))
+          }
+          className="border-border/60 bg-secondary/30"
+          placeholder="e.g. 30"
+        />
+      </div>
+
+      <div className="col-span-2 space-y-1.5">
+        <Label className="text-sm">Description</Label>
+        <textarea
+          value={form.description}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, description: e.target.value }))
+          }
+          rows={3}
+          className="w-full rounded-lg border border-border/60 bg-secondary/30 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+          placeholder="Optional session notes or agenda..."
+        />
+      </div>
+    </div>
+  );
+}
+
 export function AdminSchedule() {
   const [sessions, setSessions] = useState<Session[]>(getSessions);
   const [addOpen, setAddOpen] = useState(false);
@@ -141,105 +248,6 @@ export function AdminSchedule() {
     setForm(rest);
   };
 
-  const F = ({
-    label,
-    children,
-  }: { label: string; children: React.ReactNode }) => (
-    <div className="space-y-1.5">
-      <Label className="text-sm">{label}</Label>
-      {children}
-    </div>
-  );
-
-  const SessionForm = (
-    <div className="grid grid-cols-2 gap-4">
-      <div className="col-span-2">
-        <F label="Session Title">
-          <Input
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            className="border-border/60 bg-secondary/30"
-            placeholder="e.g. Network Security Lab - Batch 3"
-          />
-        </F>
-      </div>
-      <F label="Course">
-        <Select
-          value={form.course}
-          onValueChange={(v) => setForm((f) => ({ ...f, course: v }))}
-        >
-          <SelectTrigger className="border-border/60 bg-secondary/30">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Beginner">Beginner (HackStart™)</SelectItem>
-            <SelectItem value="Intermediate">
-              Intermediate (CyberElevate™)
-            </SelectItem>
-            <SelectItem value="Corporate">Corporate Training</SelectItem>
-          </SelectContent>
-        </Select>
-      </F>
-      <F label="Mode">
-        <Select
-          value={form.mode}
-          onValueChange={(v) => setForm((f) => ({ ...f, mode: v }))}
-        >
-          <SelectTrigger className="border-border/60 bg-secondary/30">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Online">Online</SelectItem>
-            <SelectItem value="Hybrid">Hybrid</SelectItem>
-            <SelectItem value="Onsite">Onsite</SelectItem>
-          </SelectContent>
-        </Select>
-      </F>
-      <F label="Date">
-        <Input
-          type="date"
-          value={form.date}
-          onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-          className="border-border/60 bg-secondary/30"
-        />
-      </F>
-      <F label="Time">
-        <Input
-          type="time"
-          value={form.time}
-          onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-          className="border-border/60 bg-secondary/30"
-        />
-      </F>
-      <div className="col-span-2">
-        <F label="Max Participants">
-          <Input
-            type="number"
-            value={form.maxParticipants}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, maxParticipants: e.target.value }))
-            }
-            className="border-border/60 bg-secondary/30"
-            placeholder="e.g. 30"
-          />
-        </F>
-      </div>
-      <div className="col-span-2">
-        <F label="Description">
-          <textarea
-            value={form.description}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, description: e.target.value }))
-            }
-            rows={3}
-            className="w-full rounded-lg border border-border/60 bg-secondary/30 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="Optional session notes or agenda..."
-          />
-        </F>
-      </div>
-    </div>
-  );
-
   return (
     <AdminLayout activePage="schedule">
       <motion.div
@@ -279,7 +287,7 @@ export function AdminSchedule() {
                     Schedule New Session
                   </DialogTitle>
                 </DialogHeader>
-                {SessionForm}
+                <SessionFormFields form={form} setForm={setForm} />
                 <DialogFooter>
                   <Button
                     variant="ghost"
@@ -417,7 +425,10 @@ export function AdminSchedule() {
                                   Edit Session
                                 </DialogTitle>
                               </DialogHeader>
-                              {SessionForm}
+                              <SessionFormFields
+                                form={form}
+                                setForm={setForm}
+                              />
                               <DialogFooter>
                                 <Button
                                   variant="ghost"

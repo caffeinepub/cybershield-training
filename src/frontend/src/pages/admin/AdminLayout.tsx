@@ -2,12 +2,14 @@ import {
   Award,
   BookOpen,
   Calendar,
+  ClipboardList,
   Edit,
   FileText,
   Globe,
   LayoutDashboard,
   LogOut,
   Shield,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -22,7 +24,9 @@ interface AdminLayoutProps {
     | "homepage"
     | "training-content"
     | "schedule"
-    | "certificates";
+    | "certificates"
+    | "assessment-questions"
+    | "leaders";
 }
 
 export function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -94,6 +98,20 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
       icon: Award,
       href: "/admin/certificates",
       ocid: "admin.sidebar.certificates.link",
+    },
+    {
+      key: "assessment-questions",
+      label: "Assessment Questions",
+      icon: ClipboardList,
+      href: "/admin/assessment-questions",
+      ocid: "admin.sidebar.assessment_questions.link",
+    },
+    {
+      key: "leaders",
+      label: "Meet The Leaders",
+      icon: UserCheck,
+      href: "/admin/leaders",
+      ocid: "admin.sidebar.leaders.link",
     },
   ];
 

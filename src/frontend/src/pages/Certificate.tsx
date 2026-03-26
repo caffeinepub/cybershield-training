@@ -126,9 +126,14 @@ export function Certificate() {
           <div className="px-12 py-12 text-center">
             {/* Logo area */}
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
+              <img
+                src="/assets/Alangh_Logo.png"
+                alt="Alangh Academy"
+                className="h-14 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
               <div className="text-left">
                 <p className="font-display text-xl font-bold text-foreground">
                   Alangh Academy
@@ -171,7 +176,7 @@ export function Certificate() {
             </p>
 
             <p className="text-sm text-muted-foreground mb-8">
-              offered by Alangh Infosec Pvt. Ltd. (Alangh Academy)
+              offered by Alangh Academy Pvt. Ltd.
             </p>
 
             {/* Decorative divider */}

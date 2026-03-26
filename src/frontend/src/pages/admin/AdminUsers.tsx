@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -18,10 +19,13 @@ import {
 import { Download, Eye, RefreshCw, Search, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { AdminLayout } from "./AdminLayout";
 
 interface Registration {
+  id?: string;
   name: string;
+  username?: string;
   email: string;
   phone?: string;
   address?: string;
@@ -30,23 +34,101 @@ interface Registration {
   registeredAt?: string;
   score?: number;
   enrolledCourse?: string;
+  passwordHash?: string;
+  disabled?: boolean;
 }
 
 function getRegistrations(): Registration[] {
+  // Merge alangh_users and alangh_registrations, preferring alangh_users data
   try {
-    return JSON.parse(localStorage.getItem("alangh_registrations") || "[]");
+    const users: Registration[] = JSON.parse(
+      localStorage.getItem("alangh_users") || "[]",
+    );
+    const regs: Registration[] = JSON.parse(
+      localStorage.getItem("alangh_registrations") || "[]",
+    );
+    // Start with users list
+    const merged = [...users];
+    // Add regs not already in users (by email)
+    const emails = new Set(users.map((u) => u.email.toLowerCase()));
+    for (const r of regs) {
+      if (!emails.has(r.email.toLowerCase())) {
+        merged.push(r);
+      }
+    }
+    // Merge score from regs into users
+    return merged.map((u) => {
+      const regMatch = regs.find(
+        (r) => r.email.toLowerCase() === u.email.toLowerCase(),
+      );
+      return { ...u, score: u.score ?? regMatch?.score };
+    });
   } catch {
     return [];
   }
 }
 
-function courseColor(course?: string) {
-  if (!course) return "border-border/40 text-muted-foreground";
-  if (course.toLowerCase().includes("beginner"))
-    return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
-  if (course.toLowerCase().includes("intermediate"))
-    return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
-  return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+function saveUserUpdate(updated: Registration) {
+  // Update in both stores
+  const users: Registration[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("alangh_users") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+  const ui = users.findIndex(
+    (u) => u.email.toLowerCase() === updated.email.toLowerCase(),
+  );
+  if (ui >= 0) {
+    users[ui] = { ...users[ui], ...updated };
+    localStorage.setItem("alangh_users", JSON.stringify(users));
+  }
+
+  const regs: Registration[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("alangh_registrations") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+  const ri = regs.findIndex(
+    (r) => r.email.toLowerCase() === updated.email.toLowerCase(),
+  );
+  if (ri >= 0) {
+    regs[ri] = { ...regs[ri], ...updated };
+    localStorage.setItem("alangh_registrations", JSON.stringify(regs));
+  }
+}
+
+function deleteUser(email: string) {
+  const users: Registration[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("alangh_users") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+  localStorage.setItem(
+    "alangh_users",
+    JSON.stringify(
+      users.filter((u) => u.email.toLowerCase() !== email.toLowerCase()),
+    ),
+  );
+
+  const regs: Registration[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("alangh_registrations") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+  localStorage.setItem(
+    "alangh_registrations",
+    JSON.stringify(
+      regs.filter((r) => r.email.toLowerCase() !== email.toLowerCase()),
+    ),
+  );
 }
 
 function DetailRow({ label, value }: { label: string; value?: string }) {
@@ -75,6 +157,7 @@ function escapeCsvField(value: string | undefined): string {
 function exportToCsv(registrations: Registration[]) {
   const headers = [
     "Name",
+    "Username",
     "Email",
     "Phone",
     "Address",
@@ -84,10 +167,11 @@ function exportToCsv(registrations: Registration[]) {
     "Assessment Score",
     "Assessment Result",
     "Registered On",
+    "Status",
   ];
-
   const rows = registrations.map((r) => [
     escapeCsvField(r.name),
+    escapeCsvField(r.username),
     escapeCsvField(r.email),
     escapeCsvField(r.phone),
     escapeCsvField(r.address),
@@ -105,8 +189,8 @@ function exportToCsv(registrations: Registration[]) {
           year: "numeric",
         })
       : "",
+    r.disabled ? "Disabled" : "Active",
   ]);
-
   const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -117,10 +201,22 @@ function exportToCsv(registrations: Registration[]) {
   URL.revokeObjectURL(url);
 }
 
+function courseColor(course?: string) {
+  if (!course) return "border-border/40 text-muted-foreground";
+  if (course.toLowerCase().includes("beginner"))
+    return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+  if (course.toLowerCase().includes("intermediate"))
+    return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
+  return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+}
+
 export function AdminUsers() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Registration | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [resetPw, setResetPw] = useState("");
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const refresh = () => setRegistrations(getRegistrations());
@@ -133,11 +229,49 @@ export function AdminUsers() {
     };
   }, []);
 
+  function refresh() {
+    setRegistrations(getRegistrations());
+  }
+
   const filtered = registrations.filter(
     (r) =>
       r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.email.toLowerCase().includes(search.toLowerCase()),
+      r.email.toLowerCase().includes(search.toLowerCase()) ||
+      (r.username || "").toLowerCase().includes(search.toLowerCase()),
   );
+
+  function handleResetPassword() {
+    if (!selected || !resetPw.trim()) return;
+    const updated = { ...selected, passwordHash: btoa(resetPw) };
+    saveUserUpdate(updated);
+    setSelected(updated);
+    setResetPw("");
+    setShowResetForm(false);
+    toast.success(`Password reset for ${selected.name}`);
+    refresh();
+  }
+
+  function handleToggleDisable() {
+    if (!selected) return;
+    const updated = { ...selected, disabled: !selected.disabled };
+    saveUserUpdate(updated);
+    setSelected(updated);
+    toast.success(
+      updated.disabled
+        ? `${selected.name} has been disabled.`
+        : `${selected.name} has been enabled.`,
+    );
+    refresh();
+  }
+
+  function handleDeleteUser() {
+    if (!selected) return;
+    deleteUser(selected.email);
+    toast.success(`${selected.name}'s account has been deleted.`);
+    setSelected(null);
+    setShowDeleteConfirm(false);
+    refresh();
+  }
 
   return (
     <AdminLayout activePage="users">
@@ -162,7 +296,7 @@ export function AdminUsers() {
           <div className="relative max-w-sm flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by name, username or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 border-border/60 bg-secondary/30"
@@ -177,19 +311,17 @@ export function AdminUsers() {
               onClick={() => exportToCsv(registrations)}
               data-ocid="admin.users.export.button"
             >
-              <Download className="w-4 h-4" />
-              Export CSV
+              <Download className="w-4 h-4" /> Export CSV
             </Button>
           )}
           <Button
             variant="outline"
             size="sm"
             className="border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/50 gap-2"
-            onClick={() => setRegistrations(getRegistrations())}
+            onClick={refresh}
             data-ocid="admin.users.refresh.button"
           >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
+            <RefreshCw className="w-4 h-4" /> Refresh
           </Button>
         </div>
 
@@ -217,12 +349,13 @@ export function AdminUsers() {
               <TableHeader>
                 <TableRow className="bg-secondary/30 border-border/60">
                   <TableHead>Name</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Enrolled Course</TableHead>
+                  <TableHead>Enrollment</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead>Assessment</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Account Status</TableHead>
                   <TableHead>Details</TableHead>
                 </TableRow>
               </TableHeader>
@@ -234,11 +367,14 @@ export function AdminUsers() {
                     data-ocid={`admin.users.row.${idx + 1}`}
                   >
                     <TableCell className="font-medium">{reg.name}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm font-mono">
+                      {reg.username || "—"}
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {reg.email}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {reg.phone || "\u2014"}
+                      {reg.phone || "—"}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -246,7 +382,7 @@ export function AdminUsers() {
                         className={`text-xs ${courseColor(reg.enrolledCourse)}`}
                       >
                         {reg.enrolledCourse
-                          ? reg.enrolledCourse.split("\u2014")[0].trim()
+                          ? reg.enrolledCourse.split("—")[0].trim()
                           : "Not enrolled"}
                       </Badge>
                     </TableCell>
@@ -254,25 +390,18 @@ export function AdminUsers() {
                       {reg.registeredAt
                         ? new Date(reg.registeredAt).toLocaleDateString(
                             "en-IN",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            },
+                            { day: "numeric", month: "short", year: "numeric" },
                           )
-                        : "\u2014"}
+                        : "—"}
                     </TableCell>
                     <TableCell>
                       {reg.score !== undefined ? (
                         <Badge
                           variant="outline"
-                          className={`text-xs ${
-                            reg.score >= 16
-                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                              : "bg-red-500/20 text-red-400 border-red-500/30"
-                          }`}
+                          className={`text-xs ${reg.score >= 16 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}
                         >
-                          {reg.score}/20
+                          {reg.score}/20 &mdash;{" "}
+                          {reg.score >= 16 ? "Pass" : "Fail"}
                         </Badge>
                       ) : (
                         <Badge
@@ -286,13 +415,9 @@ export function AdminUsers() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={`text-xs ${
-                          reg.enrolledCourse
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                            : "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                        }`}
+                        className={`text-xs ${reg.disabled ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"}`}
                       >
-                        {reg.enrolledCourse ? "Enrolled" : "Registered"}
+                        {reg.disabled ? "Disabled" : "Active"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -300,11 +425,14 @@ export function AdminUsers() {
                         size="sm"
                         variant="outline"
                         className="h-7 px-2 border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                        onClick={() => setSelected(reg)}
+                        onClick={() => {
+                          setSelected(reg);
+                          setShowResetForm(false);
+                          setShowDeleteConfirm(false);
+                        }}
                         data-ocid={`admin.users.view.button.${idx + 1}`}
                       >
-                        <Eye className="w-3.5 h-3.5 mr-1" />
-                        View
+                        <Eye className="w-3.5 h-3.5 mr-1" /> View
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -339,6 +467,7 @@ export function AdminUsers() {
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <DetailRow label="Full Name" value={selected.name} />
+                  <DetailRow label="Username" value={selected.username} />
                   <DetailRow label="Email" value={selected.email} />
                   <DetailRow label="Phone" value={selected.phone} />
                   <DetailRow
@@ -347,11 +476,7 @@ export function AdminUsers() {
                       selected.registeredAt
                         ? new Date(selected.registeredAt).toLocaleDateString(
                             "en-IN",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            },
+                            { day: "numeric", month: "long", year: "numeric" },
                           )
                         : undefined
                     }
@@ -393,7 +518,7 @@ export function AdminUsers() {
                       className={`text-xs ${courseColor(selected.enrolledCourse)}`}
                     >
                       {selected.enrolledCourse
-                        ? selected.enrolledCourse.split("\u2014")[0].trim()
+                        ? selected.enrolledCourse.split("—")[0].trim()
                         : "Not enrolled"}
                     </Badge>
                   </div>
@@ -404,11 +529,7 @@ export function AdminUsers() {
                     {selected.score !== undefined ? (
                       <Badge
                         variant="outline"
-                        className={`text-xs ${
-                          selected.score >= 16
-                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                            : "bg-red-500/20 text-red-400 border-red-500/30"
-                        }`}
+                        className={`text-xs ${selected.score >= 16 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}
                       >
                         {selected.score}/20 &mdash;{" "}
                         {selected.score >= 16 ? "Pass" : "Fail"}
@@ -422,6 +543,120 @@ export function AdminUsers() {
                       </Badge>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Admin Actions */}
+              <div className="rounded-lg border border-border/60 bg-secondary/20 p-4 space-y-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Admin Actions
+                </p>
+
+                {/* Reset Password */}
+                <div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-border/60 text-muted-foreground hover:text-foreground w-full justify-start gap-2"
+                    onClick={() => setShowResetForm((v) => !v)}
+                    data-ocid="admin.users.reset_password.button"
+                  >
+                    🔑 Reset Password
+                  </Button>
+                  {showResetForm && (
+                    <div className="mt-3 space-y-2 p-3 rounded-lg bg-secondary/40 border border-border/40">
+                      <Label htmlFor="admin-reset-pw" className="text-xs">
+                        New Password
+                      </Label>
+                      <Input
+                        id="admin-reset-pw"
+                        type="text"
+                        value={resetPw}
+                        onChange={(e) => setResetPw(e.target.value)}
+                        placeholder="Enter new password for user"
+                        className="border-border/60 bg-secondary/30 h-8 text-sm"
+                        data-ocid="admin.users.reset_password.input"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleResetPassword}
+                          className="flex-1"
+                          data-ocid="admin.users.reset_password.confirm_button"
+                        >
+                          Confirm Reset
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShowResetForm(false);
+                            setResetPw("");
+                          }}
+                          className="border-border/60"
+                          data-ocid="admin.users.reset_password.cancel_button"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Disable / Enable */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`w-full justify-start gap-2 ${selected.disabled ? "border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10" : "border-amber-500/40 text-amber-400 hover:bg-amber-500/10"}`}
+                  onClick={handleToggleDisable}
+                  data-ocid="admin.users.toggle_disable.button"
+                >
+                  {selected.disabled
+                    ? "✅ Enable Account"
+                    : "⛔ Disable Account"}
+                </Button>
+
+                {/* Delete */}
+                <div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    data-ocid="admin.users.delete.button"
+                  >
+                    🗑️ Delete Account
+                  </Button>
+                  {showDeleteConfirm && (
+                    <div
+                      className="mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30 space-y-3"
+                      data-ocid="admin.users.delete_confirm.dialog"
+                    >
+                      <p className="text-sm text-destructive font-medium">
+                        Are you sure? This cannot be undone.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleDeleteUser}
+                          className="flex-1"
+                          data-ocid="admin.users.delete.confirm_button"
+                        >
+                          Yes, Delete
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="border-border/60"
+                          data-ocid="admin.users.delete.cancel_button"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

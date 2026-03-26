@@ -21,6 +21,7 @@ import { CourseLearn } from "./pages/CourseLearn";
 import { Courses } from "./pages/Courses";
 import { Dashboard } from "./pages/Dashboard";
 import { Disclaimer } from "./pages/Disclaimer";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Payment } from "./pages/Payment";
@@ -31,11 +32,13 @@ import { SelectCourse } from "./pages/SelectCourse";
 import { SelfAssessment } from "./pages/SelfAssessment";
 import { TermsOfUse } from "./pages/TermsOfUse";
 import { UserProfile } from "./pages/UserProfile";
+import { AdminAssessmentQuestions } from "./pages/admin/AdminAssessmentQuestions";
 import { AdminCertificates } from "./pages/admin/AdminCertificates";
 import { AdminCourses } from "./pages/admin/AdminCourses";
 import { AdminCoursesContent } from "./pages/admin/AdminCoursesContent";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminHomepage } from "./pages/admin/AdminHomepage";
+import { AdminLeaders } from "./pages/admin/AdminLeaders";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminSchedule } from "./pages/admin/AdminSchedule";
 import { AdminTrainingContent } from "./pages/admin/AdminTrainingContent";
@@ -261,6 +264,24 @@ const adminCertificatesRoute = createRoute({
   component: AdminCertificates,
 });
 
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/forgot-password",
+  component: ForgotPassword,
+});
+
+const adminAssessmentQuestionsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/assessment-questions",
+  component: AdminAssessmentQuestions,
+});
+
+const adminLeadersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/leaders",
+  component: AdminLeaders,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   coursesRoute,
@@ -294,6 +315,9 @@ const routeTree = rootRoute.addChildren([
   adminHomepageRoute,
   adminTrainingContentRoute,
   adminCertificatesRoute,
+  forgotPasswordRoute,
+  adminAssessmentQuestionsRoute,
+  adminLeadersRoute,
 ]);
 
 const router = createRouter({ routeTree });

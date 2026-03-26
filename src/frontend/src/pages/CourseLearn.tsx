@@ -15,6 +15,23 @@ import {
 import { motion } from "motion/react";
 import { useState } from "react";
 
+const IDB_NAME = "alangh_training_files";
+const IDB_STORE = "files";
+
+async function getFileFromIDB(id: string): Promise<File | undefined> {
+  return new Promise((resolve) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => {
+      const tx = req.result.transaction(IDB_STORE, "readonly");
+      const getReq = tx.objectStore(IDB_STORE).get(id);
+      getReq.onsuccess = () => resolve(getReq.result as File | undefined);
+      getReq.onerror = () => resolve(undefined);
+    };
+    req.onerror = () => resolve(undefined);
+  });
+}
+
 interface Chapter {
   id: string;
   title: string;
@@ -522,6 +539,7 @@ export function CourseLearn() {
           content?: string;
           isActive: boolean;
           uploadedAt: string;
+          fileName?: string;
         }> = (() => {
           try {
             return JSON.parse(
@@ -601,6 +619,7 @@ interface LearnerResourceCardProps {
     resourceType: string;
     url?: string;
     content?: string;
+    fileName?: string;
   };
   index: number;
   typeBadgeClass: Record<string, string>;
@@ -614,6 +633,24 @@ function ResourceCard({
   typeLabelMap,
 }: LearnerResourceCardProps) {
   const [noteExpanded, setNoteExpanded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleFileDownload = async () => {
+    setDownloading(true);
+    const file = await getFileFromIDB(resource.id);
+    if (!file) {
+      setDownloading(false);
+      alert("File not available. Please contact your instructor.");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = resource.fileName || file.name;
+    a.click();
+    URL.revokeObjectURL(url);
+    setDownloading(false);
+  };
   return (
     <Card
       className="border-border/60 bg-card/60 hover:border-primary/30 transition-all"
@@ -641,6 +678,19 @@ function ResourceCard({
             Open Link ↗
           </a>
         )}
+        {resource.resourceType !== "note" &&
+          !resource.url &&
+          resource.fileName && (
+            <button
+              type="button"
+              onClick={handleFileDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1 disabled:opacity-50"
+              data-ocid={`course_learn.download.${index + 1}`}
+            >
+              {downloading ? "Loading..." : `Download ${resource.fileName}`} ↓
+            </button>
+          )}
         {resource.resourceType === "note" && resource.content && (
           <div>
             <button

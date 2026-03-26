@@ -479,12 +479,25 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function getQuestionsPool(): Question[] {
+  try {
+    const raw = localStorage.getItem("alangh_assessment_questions");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0)
+        return parsed as Question[];
+    }
+  } catch {}
+  return ALL_QUESTIONS;
+}
+
 function selectQuestions(prevIds: number[]): Question[] {
+  const pool = getQuestionsPool();
   const prevSet = new Set(prevIds);
-  const fresh = shuffle(ALL_QUESTIONS.filter((q) => !prevSet.has(q.id)));
-  const reuse = shuffle(ALL_QUESTIONS.filter((q) => prevSet.has(q.id)));
-  const pool = [...fresh, ...reuse];
-  return pool.slice(0, 20);
+  const fresh = shuffle(pool.filter((q) => !prevSet.has(q.id)));
+  const reuse = shuffle(pool.filter((q) => prevSet.has(q.id)));
+  const combined = [...fresh, ...reuse];
+  return combined.slice(0, 20);
 }
 
 const PASS_SCORE = 16;
