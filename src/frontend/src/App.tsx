@@ -33,6 +33,7 @@ import { SelfAssessment } from "./pages/SelfAssessment";
 import { TermsOfUse } from "./pages/TermsOfUse";
 import { UserProfile } from "./pages/UserProfile";
 import { AdminAssessmentQuestions } from "./pages/admin/AdminAssessmentQuestions";
+import { AdminAuditLogs } from "./pages/admin/AdminAuditLogs";
 import { AdminCertificates } from "./pages/admin/AdminCertificates";
 import { AdminCourses } from "./pages/admin/AdminCourses";
 import { AdminCoursesContent } from "./pages/admin/AdminCoursesContent";
@@ -282,6 +283,12 @@ const adminLeadersRoute = createRoute({
   component: AdminLeaders,
 });
 
+const adminAuditLogsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/audit-logs",
+  component: AdminAuditLogs,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   coursesRoute,
@@ -318,6 +325,7 @@ const routeTree = rootRoute.addChildren([
   forgotPasswordRoute,
   adminAssessmentQuestionsRoute,
   adminLeadersRoute,
+  adminAuditLogsRoute,
 ]);
 
 const router = createRouter({ routeTree });

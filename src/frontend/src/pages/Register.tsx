@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { logAudit } from "@/lib/auditLog";
 import { useNavigate } from "@tanstack/react-router";
 import {
   CheckCircle2,
@@ -233,6 +234,13 @@ export function Register() {
     localStorage.setItem("alangh_current_user", JSON.stringify(userObj));
     sessionStorage.setItem("alangh_current_email", form.email);
     window.dispatchEvent(new CustomEvent("alanghUserChanged"));
+    logAudit({
+      actor: username,
+      actorType: "user",
+      action: "USER_REGISTER",
+      details: `New user registered: ${form.name} (${username})`,
+      resource: form.email,
+    });
 
     setStep("done");
     setTimeout(() => {

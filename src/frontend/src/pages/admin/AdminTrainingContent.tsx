@@ -20,6 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { logAudit } from "@/lib/auditLog";
 import {
   BookOpen,
   Download,
@@ -406,6 +407,13 @@ export function AdminTrainingContent() {
         uploadedAt: new Date().toISOString(),
       };
       updated = [...resources, newResource];
+      logAudit({
+        actor: "admin",
+        actorType: "admin",
+        action: "ADMIN_CONTENT_UPLOADED",
+        details: `Training resource uploaded: ${newResource.fileName || newResource.title} for ${newResource.courseLevel}`,
+        resource: newResource.courseLevel,
+      });
       toast.success("Resource added successfully!");
     }
 
@@ -416,12 +424,21 @@ export function AdminTrainingContent() {
   };
 
   const handleDelete = (id: string) => {
+    const toDelete = resources.find((r) => r.id === id);
     try {
       deleteFileFromIDB(id).catch(() => {});
     } catch {}
     const updated = resources.filter((r) => r.id !== id);
     setResources(updated);
     saveResources(updated);
+    if (toDelete)
+      logAudit({
+        actor: "admin",
+        actorType: "admin",
+        action: "ADMIN_CONTENT_DELETED",
+        details: `Training resource deleted: ${toDelete.fileName || toDelete.title}`,
+        resource: toDelete.courseLevel,
+      });
     toast.success("Resource deleted.");
   };
 

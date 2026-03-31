@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { logAudit } from "@/lib/auditLog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -90,6 +91,12 @@ export function Login() {
     }
 
     if (!match) {
+      logAudit({
+        actor: username.trim(),
+        actorType: "user",
+        action: "USER_LOGIN_FAILED",
+        details: `Failed login attempt for username: ${username.trim()}`,
+      });
       setLoginState("notfound");
       return;
     }
@@ -103,6 +110,12 @@ export function Login() {
     // Check password
     const hash = btoa(password);
     if (hash !== match.passwordHash) {
+      logAudit({
+        actor: username.trim(),
+        actorType: "user",
+        action: "USER_LOGIN_FAILED",
+        details: `Failed login attempt for username: ${username.trim()} (wrong password)`,
+      });
       setLoginState("wrongpassword");
       return;
     }
@@ -121,6 +134,13 @@ export function Login() {
     localStorage.setItem("alangh_current_user", JSON.stringify(currentUser));
     sessionStorage.setItem("alangh_current_email", match.email);
     window.dispatchEvent(new CustomEvent("alanghUserChanged"));
+    logAudit({
+      actor: match.username || match.name,
+      actorType: "user",
+      action: "USER_LOGIN",
+      details: `User logged in: ${match.username || match.name}`,
+      resource: match.username || match.name,
+    });
 
     setTimeout(() => {
       navigate({ to: "/profile" });

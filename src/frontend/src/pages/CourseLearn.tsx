@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { logAudit } from "@/lib/auditLog";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   Award,
@@ -251,11 +252,23 @@ export function CourseLearn() {
 
   const handleMarkComplete = (chapterId: string) => {
     if (!currentUser) return;
-    const updated = completed.includes(chapterId)
+    const wasCompleted = completed.includes(chapterId);
+    const updated = wasCompleted
       ? completed.filter((c) => c !== chapterId)
       : [...completed, chapterId];
     setCompleted(updated);
     saveProgress(currentUser.id, level, updated);
+    if (!wasCompleted) {
+      const chapterName =
+        chapters.find((c) => c.id === chapterId)?.title || chapterId;
+      logAudit({
+        actor: currentUser.name,
+        actorType: "user",
+        action: "USER_CHAPTER_COMPLETED",
+        details: `Completed chapter: ${chapterName}`,
+        resource: currentUser.name,
+      });
+    }
   };
 
   const courseTitle =

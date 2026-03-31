@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { logAudit } from "@/lib/auditLog";
 import { Download, Eye, RefreshCw, Search, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -247,6 +248,13 @@ export function AdminUsers() {
     setSelected(updated);
     setResetPw("");
     setShowResetForm(false);
+    logAudit({
+      actor: "admin",
+      actorType: "admin",
+      action: "ADMIN_USER_PASSWORD_RESET",
+      details: `Admin reset password for user: ${selected.name} (${selected.email})`,
+      resource: selected.email,
+    });
     toast.success(`Password reset for ${selected.name}`);
     refresh();
   }
@@ -256,6 +264,13 @@ export function AdminUsers() {
     const updated = { ...selected, disabled: !selected.disabled };
     saveUserUpdate(updated);
     setSelected(updated);
+    logAudit({
+      actor: "admin",
+      actorType: "admin",
+      action: "ADMIN_USER_STATUS_CHANGED",
+      details: `Admin ${updated.disabled ? "disabled" : "enabled"} account for: ${selected.name} (${selected.email})`,
+      resource: selected.email,
+    });
     toast.success(
       updated.disabled
         ? `${selected.name} has been disabled.`
@@ -266,6 +281,13 @@ export function AdminUsers() {
 
   function handleDeleteUser() {
     if (!selected) return;
+    logAudit({
+      actor: "admin",
+      actorType: "admin",
+      action: "ADMIN_USER_DELETED",
+      details: `Admin deleted account for: ${selected.name} (${selected.email})`,
+      resource: selected.email,
+    });
     deleteUser(selected.email);
     toast.success(`${selected.name}'s account has been deleted.`);
     setSelected(null);

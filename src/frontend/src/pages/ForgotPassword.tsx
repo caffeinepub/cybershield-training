@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { logAudit } from "@/lib/auditLog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -206,6 +207,13 @@ export function ForgotPassword() {
     if (Object.keys(errs).length > 0) return;
 
     updatePassword(foundUsername, newPassword);
+    logAudit({
+      actor: foundUsername,
+      actorType: "user",
+      action: "USER_PASSWORD_RESET",
+      details: `Password reset completed for: ${foundUsername}`,
+      resource: foundUsername,
+    });
     setStep("done");
     setTimeout(() => navigate({ to: "/login" }), 2000);
   }

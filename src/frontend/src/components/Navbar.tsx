@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { logAudit } from "@/lib/auditLog";
 import { Link } from "@tanstack/react-router";
 import { LogIn, LogOut, Menu, Settings, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,6 +35,16 @@ export function Navbar() {
   }, []);
 
   const handleLogout = () => {
+    const raw = localStorage.getItem("alangh_current_user");
+    const actor = raw
+      ? JSON.parse(raw)?.username || JSON.parse(raw)?.name || "unknown"
+      : "unknown";
+    logAudit({
+      actor,
+      actorType: "user",
+      action: "USER_LOGOUT",
+      details: `User logged out: ${actor}`,
+    });
     localStorage.removeItem("alangh_current_user");
     setCurrentUser(null);
     window.dispatchEvent(new CustomEvent("alanghUserChanged"));

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { logAudit } from "@/lib/auditLog";
 import { Link } from "@tanstack/react-router";
 import {
   Award,
@@ -602,6 +603,13 @@ export function SelfAssessment() {
     const currentUser = getCurrentUser();
     if (currentUser) {
       saveAssessmentResult(currentUser, correct, passed);
+      logAudit({
+        actor: currentUser.name,
+        actorType: "user",
+        action: "USER_ASSESSMENT_COMPLETED",
+        details: `Assessment completed with score ${correct}/20 — ${passed ? "Pass" : "Fail"}`,
+        resource: currentUser.name,
+      });
     }
 
     // Also persist score to legacy alangh_registrations for backward compat

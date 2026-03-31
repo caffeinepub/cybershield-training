@@ -1,3 +1,4 @@
+import { logAudit } from "@/lib/auditLog";
 import {
   Award,
   BookOpen,
@@ -8,6 +9,7 @@ import {
   Globe,
   LayoutDashboard,
   LogOut,
+  ScrollText,
   Shield,
   UserCheck,
   Users,
@@ -26,7 +28,8 @@ interface AdminLayoutProps {
     | "schedule"
     | "certificates"
     | "assessment-questions"
-    | "leaders";
+    | "leaders"
+    | "audit-logs";
 }
 
 export function AdminLayout({ children, activePage }: AdminLayoutProps) {
@@ -38,6 +41,12 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
   }, []);
 
   const handleLogout = () => {
+    logAudit({
+      actor: "admin",
+      actorType: "admin",
+      action: "ADMIN_LOGOUT",
+      details: "Admin logged out",
+    });
     localStorage.removeItem("adminLoggedIn");
     window.location.href = "/admin/login";
   };
@@ -112,6 +121,13 @@ export function AdminLayout({ children, activePage }: AdminLayoutProps) {
       icon: UserCheck,
       href: "/admin/leaders",
       ocid: "admin.sidebar.leaders.link",
+    },
+    {
+      key: "audit-logs",
+      label: "Audit Logs",
+      icon: ScrollText,
+      href: "/admin/audit-logs",
+      ocid: "admin.sidebar.audit_logs.link",
     },
   ];
 

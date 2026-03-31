@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { logAudit } from "@/lib/auditLog";
 import { Award, CheckCircle2, ExternalLink, ShieldOff } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -107,6 +108,13 @@ export function AdminCertificates() {
     ];
     saveCerts(updated);
     setCerts(updated);
+    logAudit({
+      actor: "admin",
+      actorType: "admin",
+      action: "ADMIN_CERTIFICATE_ISSUED",
+      details: `Certificate issued to ${student.userName}`,
+      resource: student.userEmail,
+    });
   };
 
   const handleRevoke = (certId: string) => {
@@ -115,8 +123,17 @@ export function AdminCertificates() {
         ? { ...c, revokedAt: new Date().toISOString() }
         : c,
     );
+    const revoked = certs.find((c) => c.certificateId === certId);
     saveCerts(updated);
     setCerts(updated);
+    if (revoked)
+      logAudit({
+        actor: "admin",
+        actorType: "admin",
+        action: "ADMIN_CERTIFICATE_REVOKED",
+        details: `Certificate revoked for ${revoked.userName}`,
+        resource: revoked.userEmail,
+      });
   };
 
   const issued = certs.filter((c) => !c.revokedAt).length;

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { logAudit } from "@/lib/auditLog";
 import { Shield } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -18,9 +19,21 @@ export function AdminLogin() {
     setTimeout(() => {
       if (username === "admin" && password === "alangh@2024") {
         localStorage.setItem("adminLoggedIn", "true");
+        logAudit({
+          actor: "admin",
+          actorType: "admin",
+          action: "ADMIN_LOGIN",
+          details: "Admin logged in",
+        });
         window.location.href = "/admin/dashboard";
       } else {
         setError("Invalid username or password. Please try again.");
+        logAudit({
+          actor: username || "unknown",
+          actorType: "admin",
+          action: "ADMIN_LOGIN_FAILED",
+          details: "Failed admin login attempt",
+        });
         setLoading(false);
       }
     }, 500);
