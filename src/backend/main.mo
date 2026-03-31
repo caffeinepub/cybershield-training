@@ -383,4 +383,201 @@ actor {
       (user, courseSet.toArray());
     });
   };
+
+  ///////////////////////////
+  // User Account Storage
+  ///////////////////////////
+
+  public type UserAccount = {
+    username : Text;
+    fullName : Text;
+    email : Text;
+    passwordHash : Text;
+    phone : Text;
+    address : Text;
+    profileBio : Text;
+    reason : Text;
+    createdAt : Int;
+    isDisabled : Bool;
+    enrolledCourse : ?Text;
+    assessmentScore : ?Nat;
+    assessmentPassed : ?Bool;
+  };
+
+  let userAccounts = Map.empty<Text, UserAccount>();
+  let emailIndex = Map.empty<Text, Text>();
+
+  public shared func registerUser(
+    username : Text,
+    fullName : Text,
+    email : Text,
+    passwordHash : Text,
+    phone : Text,
+    address : Text,
+    profileBio : Text,
+    reason : Text,
+    createdAt : Int,
+  ) : async { #ok; #err : Text } {
+    if (userAccounts.containsKey(username)) {
+      return #err("Username already taken");
+    };
+    if (emailIndex.containsKey(email)) {
+      return #err("Email already registered");
+    };
+    let account : UserAccount = {
+      username;
+      fullName;
+      email;
+      passwordHash;
+      phone;
+      address;
+      profileBio;
+      reason;
+      createdAt;
+      isDisabled = false;
+      enrolledCourse = null;
+      assessmentScore = null;
+      assessmentPassed = null;
+    };
+    userAccounts.add(username, account);
+    emailIndex.add(email, username);
+    #ok;
+  };
+
+  public query func loginUser(username : Text, passwordHash : Text) : async ?UserAccount {
+    switch (userAccounts.get(username)) {
+      case (null) { null };
+      case (?account) {
+        if (account.isDisabled) { null }
+        else if (account.passwordHash == passwordHash) { ?account }
+        else { null };
+      };
+    };
+  };
+
+  public query func getMaskedEmailByUsername(username : Text) : async ?Text {
+    switch (userAccounts.get(username)) {
+      case (null) { null };
+      case (?account) { ?account.email };
+    };
+  };
+
+  public shared func saveAssessmentResult(username : Text, score : Nat, passed : Bool) : async Bool {
+    switch (userAccounts.get(username)) {
+      case (null) { false };
+      case (?account) {
+        let updated : UserAccount = {
+          username = account.username;
+          fullName = account.fullName;
+          email = account.email;
+          passwordHash = account.passwordHash;
+          phone = account.phone;
+          address = account.address;
+          profileBio = account.profileBio;
+          reason = account.reason;
+          createdAt = account.createdAt;
+          isDisabled = account.isDisabled;
+          enrolledCourse = account.enrolledCourse;
+          assessmentScore = ?score;
+          assessmentPassed = ?passed;
+        };
+        userAccounts.add(username, updated);
+        true;
+      };
+    };
+  };
+
+  public query func getAllRegisteredUsers() : async [UserAccount] {
+    userAccounts.values().toArray();
+  };
+
+  public query func getUserByUsername(username : Text) : async ?UserAccount {
+    userAccounts.get(username);
+  };
+
+  public shared func adminResetUserPassword(username : Text, newPasswordHash : Text) : async Bool {
+    switch (userAccounts.get(username)) {
+      case (null) { false };
+      case (?account) {
+        let updated : UserAccount = {
+          username = account.username;
+          fullName = account.fullName;
+          email = account.email;
+          passwordHash = newPasswordHash;
+          phone = account.phone;
+          address = account.address;
+          profileBio = account.profileBio;
+          reason = account.reason;
+          createdAt = account.createdAt;
+          isDisabled = account.isDisabled;
+          enrolledCourse = account.enrolledCourse;
+          assessmentScore = account.assessmentScore;
+          assessmentPassed = account.assessmentPassed;
+        };
+        userAccounts.add(username, updated);
+        true;
+      };
+    };
+  };
+
+  public shared func adminSetUserDisabled(username : Text, isDisabled : Bool) : async Bool {
+    switch (userAccounts.get(username)) {
+      case (null) { false };
+      case (?account) {
+        let updated : UserAccount = {
+          username = account.username;
+          fullName = account.fullName;
+          email = account.email;
+          passwordHash = account.passwordHash;
+          phone = account.phone;
+          address = account.address;
+          profileBio = account.profileBio;
+          reason = account.reason;
+          createdAt = account.createdAt;
+          isDisabled;
+          enrolledCourse = account.enrolledCourse;
+          assessmentScore = account.assessmentScore;
+          assessmentPassed = account.assessmentPassed;
+        };
+        userAccounts.add(username, updated);
+        true;
+      };
+    };
+  };
+
+  public shared func adminDeleteUser(username : Text) : async Bool {
+    switch (userAccounts.get(username)) {
+      case (null) { false };
+      case (?account) {
+        userAccounts.remove(username);
+        emailIndex.remove(account.email);
+        true;
+      };
+    };
+  };
+
+  public shared func adminAssignCourse(username : Text, enrolledCourse : ?Text) : async Bool {
+    switch (userAccounts.get(username)) {
+      case (null) { false };
+      case (?account) {
+        let updated : UserAccount = {
+          username = account.username;
+          fullName = account.fullName;
+          email = account.email;
+          passwordHash = account.passwordHash;
+          phone = account.phone;
+          address = account.address;
+          profileBio = account.profileBio;
+          reason = account.reason;
+          createdAt = account.createdAt;
+          isDisabled = account.isDisabled;
+          enrolledCourse;
+          assessmentScore = account.assessmentScore;
+          assessmentPassed = account.assessmentPassed;
+        };
+        userAccounts.add(username, updated);
+        true;
+      };
+    };
+  };
 };

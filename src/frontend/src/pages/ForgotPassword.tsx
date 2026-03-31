@@ -1,7 +1,9 @@
+import type { Backend } from "@/backend";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -144,6 +146,7 @@ type Step = "username" | "confirm" | "reset" | "done";
 
 export function ForgotPassword() {
   const navigate = useNavigate();
+  const { actor } = useActor();
   const [step, setStep] = useState<Step>("username");
 
   // Step 1
@@ -169,18 +172,38 @@ export function ForgotPassword() {
 
   const policy = checkPolicy(newPassword);
 
-  function handleUsernameSubmit(e: React.FormEvent) {
+  async function handleUsernameSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!inputUsername.trim()) {
       setUsernameError("Please enter your username.");
       return;
     }
-    const user = lookupByUsername(inputUsername);
-    if (!user) {
-      setUsernameError("No account found with that username.");
-      return;
+
+    // Try backend first
+    let rawEmail: string | null = null;
+    try {
+      if (actor) {
+        rawEmail = await (actor as unknown as Backend).getMaskedEmailByUsername(
+          inputUsername.trim().toLowerCase(),
+        );
+      }
+    } catch (err) {
+      console.warn("Backend unavailable for forgot password:", err);
     }
-    setMaskedEmail(maskEmail(user.email));
+
+    if (rawEmail) {
+      // Backend returned the raw email — mask it client-side
+      setMaskedEmail(maskEmail(rawEmail));
+    } else {
+      // Fall back to localStorage lookup
+      const user = lookupByUsername(inputUsername);
+      if (!user) {
+        setUsernameError("No account found with that username.");
+        return;
+      }
+      setMaskedEmail(maskEmail(user.email));
+    }
+
     setFoundUsername(inputUsername.trim());
     const generatedOtp = generateOtp();
     setOtp(generatedOtp);

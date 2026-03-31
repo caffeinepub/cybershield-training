@@ -477,6 +477,43 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+
+    async registerUser(username: string, fullName: string, email: string, passwordHash: string, phone: string, address: string, profileBio: string, reason: string, createdAt: bigint): Promise<{ok: null} | {err: string}> {
+        const result = await this.actor.registerUser(username, fullName, email, passwordHash, phone, address, profileBio, reason, createdAt);
+        return result;
+    }
+    async loginUser(username: string, passwordHash: string): Promise<any | null> {
+        const result = await this.actor.loginUser(username, passwordHash);
+        return result.length === 0 ? null : from_candid_UserAccount(result[0]);
+    }
+    async getMaskedEmailByUsername(username: string): Promise<string | null> {
+        const result = await this.actor.getMaskedEmailByUsername(username);
+        return result.length === 0 ? null : result[0];
+    }
+    async saveAssessmentResult(username: string, score: bigint, passed: boolean): Promise<boolean> {
+        return await this.actor.saveAssessmentResult(username, score, passed);
+    }
+    async getAllRegisteredUsers(): Promise<any[]> {
+        const result = await this.actor.getAllRegisteredUsers();
+        return result.map(from_candid_UserAccount);
+    }
+    async getUserByUsername(username: string): Promise<any | null> {
+        const result = await this.actor.getUserByUsername(username);
+        return result.length === 0 ? null : from_candid_UserAccount(result[0]);
+    }
+    async adminResetUserPassword(username: string, newPasswordHash: string): Promise<boolean> {
+        return await this.actor.adminResetUserPassword(username, newPasswordHash);
+    }
+    async adminSetUserDisabled(username: string, isDisabled: boolean): Promise<boolean> {
+        return await this.actor.adminSetUserDisabled(username, isDisabled);
+    }
+    async adminDeleteUser(username: string): Promise<boolean> {
+        return await this.actor.adminDeleteUser(username);
+    }
+    async adminAssignCourse(username: string, enrolledCourse: string | null): Promise<boolean> {
+        const opt = enrolledCourse == null ? [] : [enrolledCourse];
+        return await this.actor.adminAssignCourse(username, opt);
+    }
 }
 function from_candid_Course_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Course): Course {
     return from_candid_record_n7(_uploadFile, _downloadFile, value);
@@ -564,6 +601,24 @@ function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     } : value == UserRole.guest ? {
         guest: null
     } : value;
+}
+
+function from_candid_UserAccount(value: any): any {
+    return {
+        username: value.username,
+        fullName: value.fullName,
+        email: value.email,
+        passwordHash: value.passwordHash,
+        phone: value.phone,
+        address: value.address,
+        profileBio: value.profileBio,
+        reason: value.reason,
+        createdAt: value.createdAt,
+        isDisabled: value.isDisabled,
+        enrolledCourse: value.enrolledCourse.length === 0 ? null : value.enrolledCourse[0],
+        assessmentScore: value.assessmentScore.length === 0 ? null : value.assessmentScore[0],
+        assessmentPassed: value.assessmentPassed.length === 0 ? null : value.assessmentPassed[0],
+    };
 }
 export interface CreateActorOptions {
     agent?: Agent;

@@ -1,8 +1,10 @@
+import type { Backend } from "@/backend";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -85,7 +87,9 @@ function PolicyRow({ met, label }: { met: boolean; label: string }) {
 
 export function Register() {
   const navigate = useNavigate();
+  const { actor } = useActor();
   const [step, setStep] = useState<"form" | "done">("form");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState<FormData>({
     name: "",
     username: "",
@@ -168,9 +172,10 @@ export function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    setIsSubmitting(true);
 
     const userId = `user_${Date.now()}`;
     const registeredAt = new Date().toISOString();
@@ -242,6 +247,29 @@ export function Register() {
       resource: form.email,
     });
 
+    // Also persist to ICP backend (non-blocking, fallback to localStorage-only if unavailable)
+    try {
+      if (actor) {
+        const result = await (actor as unknown as Backend).registerUser(
+          username,
+          form.name,
+          form.email,
+          passwordHash,
+          form.phone,
+          form.address,
+          form.profile,
+          form.reason,
+          BigInt(Date.now()),
+        );
+        if ("err" in result) {
+          console.warn("Backend registration note:", result.err);
+        }
+      }
+    } catch (err) {
+      console.warn("Backend unavailable, using localStorage only:", err);
+    }
+
+    setIsSubmitting(false);
     setStep("done");
     setTimeout(() => {
       navigate({ to: "/self-assessment" });
@@ -560,9 +588,12 @@ export function Register() {
                       <Button
                         type="submit"
                         className="w-full gap-2"
+                        disabled={isSubmitting}
                         data-ocid="register.submit_button"
                       >
-                        Complete Registration
+                        {isSubmitting
+                          ? "Registering..."
+                          : "Complete Registration"}
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     </form>

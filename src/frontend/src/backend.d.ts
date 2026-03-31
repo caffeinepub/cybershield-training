@@ -23,6 +23,21 @@ export interface Chapter {
 export interface UserProfile {
     name: string;
 }
+export interface UserAccount {
+    username: string;
+    fullName: string;
+    email: string;
+    passwordHash: string;
+    phone: string;
+    address: string;
+    profileBio: string;
+    reason: string;
+    createdAt: bigint;
+    isDisabled: boolean;
+    enrolledCourse: string | null;
+    assessmentScore: bigint | null;
+    assessmentPassed: boolean | null;
+}
 export enum Level {
     intermediate = "intermediate",
     beginner = "beginner",
@@ -62,4 +77,15 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     updateChapter(chapterId: bigint, courseId: bigint, title: string, content: string, order: bigint): Promise<void>;
     updateCourse(courseId: bigint, title: string, description: string, level: Level): Promise<void>;
+    // User account management
+    registerUser(username: string, fullName: string, email: string, passwordHash: string, phone: string, address: string, profileBio: string, reason: string, createdAt: bigint): Promise<{ ok: null } | { err: string }>;
+    loginUser(username: string, passwordHash: string): Promise<UserAccount | null>;
+    getMaskedEmailByUsername(username: string): Promise<string | null>;
+    saveAssessmentResult(username: string, score: bigint, passed: boolean): Promise<boolean>;
+    getAllRegisteredUsers(): Promise<Array<UserAccount>>;
+    getUserByUsername(username: string): Promise<UserAccount | null>;
+    adminResetUserPassword(username: string, newPasswordHash: string): Promise<boolean>;
+    adminSetUserDisabled(username: string, isDisabled: boolean): Promise<boolean>;
+    adminDeleteUser(username: string): Promise<boolean>;
+    adminAssignCourse(username: string, enrolledCourse: string | null): Promise<boolean>;
 }

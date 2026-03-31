@@ -32,6 +32,22 @@ export const Chapter = IDL.Record({
   'order' : IDL.Nat,
   'courseId' : IDL.Nat,
 });
+export const UserAccount = IDL.Record({
+  'username' : IDL.Text,
+  'fullName' : IDL.Text,
+  'email' : IDL.Text,
+  'passwordHash' : IDL.Text,
+  'phone' : IDL.Text,
+  'address' : IDL.Text,
+  'profileBio' : IDL.Text,
+  'reason' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'isDisabled' : IDL.Bool,
+  'enrolledCourse' : IDL.Opt(IDL.Text),
+  'assessmentScore' : IDL.Opt(IDL.Nat),
+  'assessmentPassed' : IDL.Opt(IDL.Bool),
+});
+export const RegisterResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -91,6 +107,17 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateCourse' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, Level], [], []),
+  // User account management
+  'registerUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Int], [RegisterResult], []),
+  'loginUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(UserAccount)], ['query']),
+  'getMaskedEmailByUsername' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+  'saveAssessmentResult' : IDL.Func([IDL.Text, IDL.Nat, IDL.Bool], [IDL.Bool], []),
+  'getAllRegisteredUsers' : IDL.Func([], [IDL.Vec(UserAccount)], ['query']),
+  'getUserByUsername' : IDL.Func([IDL.Text], [IDL.Opt(UserAccount)], ['query']),
+  'adminResetUserPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'adminSetUserDisabled' : IDL.Func([IDL.Text, IDL.Bool], [IDL.Bool], []),
+  'adminDeleteUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'adminAssignCourse' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -120,6 +147,22 @@ export const idlFactory = ({ IDL }) => {
     'order' : IDL.Nat,
     'courseId' : IDL.Nat,
   });
+  const UserAccount = IDL.Record({
+    'username' : IDL.Text,
+    'fullName' : IDL.Text,
+    'email' : IDL.Text,
+    'passwordHash' : IDL.Text,
+    'phone' : IDL.Text,
+    'address' : IDL.Text,
+    'profileBio' : IDL.Text,
+    'reason' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'isDisabled' : IDL.Bool,
+    'enrolledCourse' : IDL.Opt(IDL.Text),
+    'assessmentScore' : IDL.Opt(IDL.Nat),
+    'assessmentPassed' : IDL.Opt(IDL.Bool),
+  });
+  const RegisterResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -179,6 +222,16 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateCourse' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, Level], [], []),
+    'registerUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Int], [RegisterResult], []),
+    'loginUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(UserAccount)], ['query']),
+    'getMaskedEmailByUsername' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+    'saveAssessmentResult' : IDL.Func([IDL.Text, IDL.Nat, IDL.Bool], [IDL.Bool], []),
+    'getAllRegisteredUsers' : IDL.Func([], [IDL.Vec(UserAccount)], ['query']),
+    'getUserByUsername' : IDL.Func([IDL.Text], [IDL.Opt(UserAccount)], ['query']),
+    'adminResetUserPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'adminSetUserDisabled' : IDL.Func([IDL.Text, IDL.Bool], [IDL.Bool], []),
+    'adminDeleteUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'adminAssignCourse' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [IDL.Bool], []),
   });
 };
 

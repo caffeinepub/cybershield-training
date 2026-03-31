@@ -1,9 +1,11 @@
+import type { Backend } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { Link } from "@tanstack/react-router";
 import {
@@ -546,6 +548,7 @@ function saveAssessmentResult(
 }
 
 export function SelfAssessment() {
+  const { actor } = useActor();
   const loadQuestions = useCallback(() => {
     const raw = sessionStorage.getItem("sa_prev_ids");
     const prevIds: number[] = raw ? JSON.parse(raw) : [];
@@ -610,6 +613,20 @@ export function SelfAssessment() {
         details: `Assessment completed with score ${correct}/20 — ${passed ? "Pass" : "Fail"}`,
         resource: currentUser.name,
       });
+      // Also persist to ICP backend
+      try {
+        if (actor) {
+          const uname =
+            (currentUser as { username?: string }).username || currentUser.name;
+          (actor as unknown as Backend)
+            .saveAssessmentResult(uname, BigInt(correct), passed)
+            .catch((err: unknown) => {
+              console.warn("Backend assessment save failed:", err);
+            });
+        }
+      } catch (err) {
+        console.warn("Backend unavailable for assessment save:", err);
+      }
     }
 
     // Also persist score to legacy alangh_registrations for backward compat

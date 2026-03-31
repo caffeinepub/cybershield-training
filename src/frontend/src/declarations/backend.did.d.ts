@@ -30,6 +30,22 @@ export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface UserAccount {
+  'username' : string,
+  'fullName' : string,
+  'email' : string,
+  'passwordHash' : string,
+  'phone' : string,
+  'address' : string,
+  'profileBio' : string,
+  'reason' : string,
+  'createdAt' : bigint,
+  'isDisabled' : boolean,
+  'enrolledCourse' : [] | [string],
+  'assessmentScore' : [] | [bigint],
+  'assessmentPassed' : [] | [boolean],
+}
+export type RegisterResult = { 'ok' : null } | { 'err' : string };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addChapter' : ActorMethod<[bigint, string, string, bigint], bigint>,
@@ -63,6 +79,17 @@ export interface _SERVICE {
     undefined
   >,
   'updateCourse' : ActorMethod<[bigint, string, string, Level], undefined>,
+  // User account management
+  'registerUser' : ActorMethod<[string, string, string, string, string, string, string, string, bigint], RegisterResult>,
+  'loginUser' : ActorMethod<[string, string], [] | [UserAccount]>,
+  'getMaskedEmailByUsername' : ActorMethod<[string], [] | [string]>,
+  'saveAssessmentResult' : ActorMethod<[string, bigint, boolean], boolean>,
+  'getAllRegisteredUsers' : ActorMethod<[], Array<UserAccount>>,
+  'getUserByUsername' : ActorMethod<[string], [] | [UserAccount]>,
+  'adminResetUserPassword' : ActorMethod<[string, string], boolean>,
+  'adminSetUserDisabled' : ActorMethod<[string, boolean], boolean>,
+  'adminDeleteUser' : ActorMethod<[string], boolean>,
+  'adminAssignCourse' : ActorMethod<[string, [] | [string]], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

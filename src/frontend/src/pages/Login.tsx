@@ -1,8 +1,10 @@
+import type { Backend } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -43,6 +45,8 @@ type LoginState =
 
 export function Login() {
   const navigate = useNavigate();
+  const { actor } = useActor();
+  const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -61,62 +65,107 @@ export function Login() {
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
+    setIsLoading(true);
 
-    // Check new alangh_users first (by username)
-    const users: Registration[] = (() => {
-      try {
-        return JSON.parse(localStorage.getItem("alangh_users") || "[]");
-      } catch {
-        return [];
+    const hash = btoa(password);
+    const lowerUsername = username.trim().toLowerCase();
+
+    // Try backend first
+    let backendMatch: Registration | null = null;
+    try {
+      if (actor) {
+        const result = await (actor as unknown as Backend).loginUser(
+          lowerUsername,
+          hash,
+        );
+        if (result) {
+          backendMatch = {
+            id: `user_${result.username}`,
+            name: result.fullName,
+            username: result.username,
+            email: result.email,
+            phone: result.phone,
+            address: result.address,
+            profile: result.profileBio,
+            reason: result.reason,
+            registeredAt: new Date(
+              Number(result.createdAt) / 1_000_000,
+            ).toISOString(),
+            enrolledCourse: result.enrolledCourse ?? undefined,
+            passwordHash: result.passwordHash,
+          } as Registration;
+        }
       }
-    })();
-    let match = users.find(
-      (u) =>
-        u.username &&
-        u.username.toLowerCase() === username.trim().toLowerCase(),
-    );
-
-    // Fall back to alangh_registrations
-    if (!match) {
-      const raw = localStorage.getItem("alangh_registrations");
-      const registrations: Registration[] = raw ? JSON.parse(raw) : [];
-      match = registrations.find(
-        (r) =>
-          r.username &&
-          r.username.toLowerCase() === username.trim().toLowerCase(),
+    } catch (err) {
+      console.warn(
+        "Backend login unavailable, falling back to localStorage:",
+        err,
       );
+    }
+
+    // Fall back to localStorage
+    let match: Registration | null = backendMatch;
+    if (!match) {
+      const users: Registration[] = (() => {
+        try {
+          return JSON.parse(localStorage.getItem("alangh_users") || "[]");
+        } catch {
+          return [];
+        }
+      })();
+      match =
+        users.find(
+          (u) => u.username && u.username.toLowerCase() === lowerUsername,
+        ) || null;
+
+      if (!match) {
+        const raw = localStorage.getItem("alangh_registrations");
+        const registrations: Registration[] = raw ? JSON.parse(raw) : [];
+        match =
+          registrations.find(
+            (r) => r.username && r.username.toLowerCase() === lowerUsername,
+          ) || null;
+      }
+
+      if (match) {
+        if (!match.passwordHash) {
+          setIsLoading(false);
+          setLoginState("nopassword");
+          return;
+        }
+        if (hash !== match.passwordHash) {
+          logAudit({
+            actor: lowerUsername,
+            actorType: "user",
+            action: "USER_LOGIN_FAILED",
+            details: `Failed login attempt for username: ${lowerUsername} (wrong password)`,
+          });
+          setIsLoading(false);
+          setLoginState("wrongpassword");
+          return;
+        }
+      }
     }
 
     if (!match) {
       logAudit({
-        actor: username.trim(),
+        actor: lowerUsername,
         actorType: "user",
         action: "USER_LOGIN_FAILED",
-        details: `Failed login attempt for username: ${username.trim()}`,
+        details: `Failed login attempt for username: ${lowerUsername}`,
       });
+      setIsLoading(false);
       setLoginState("notfound");
       return;
     }
 
-    // Account has no password stored
-    if (!match.passwordHash) {
-      setLoginState("nopassword");
-      return;
-    }
-
-    // Check password
-    const hash = btoa(password);
-    if (hash !== match.passwordHash) {
-      logAudit({
-        actor: username.trim(),
-        actorType: "user",
-        action: "USER_LOGIN_FAILED",
-        details: `Failed login attempt for username: ${username.trim()} (wrong password)`,
-      });
-      setLoginState("wrongpassword");
+    // Check disabled
+    if ((match as Registration & { disabled?: boolean }).disabled) {
+      setIsLoading(false);
+      setLoginState("notfound");
       return;
     }
 
@@ -132,6 +181,24 @@ export function Login() {
       enrolledCourse: match.enrolledCourse,
     };
     localStorage.setItem("alangh_current_user", JSON.stringify(currentUser));
+    // Also sync to localStorage users list for session use
+    const existingUsers: Registration[] = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("alangh_users") || "[]");
+      } catch {
+        return [];
+      }
+    })();
+    const ui = existingUsers.findIndex(
+      (u) => (u.username || "").toLowerCase() === lowerUsername,
+    );
+    if (ui >= 0) {
+      existingUsers[ui] = { ...existingUsers[ui], ...match };
+    } else {
+      existingUsers.push(match);
+    }
+    localStorage.setItem("alangh_users", JSON.stringify(existingUsers));
+
     sessionStorage.setItem("alangh_current_email", match.email);
     window.dispatchEvent(new CustomEvent("alanghUserChanged"));
     logAudit({
@@ -142,6 +209,7 @@ export function Login() {
       resource: match.username || match.name,
     });
 
+    setIsLoading(false);
     setTimeout(() => {
       navigate({ to: "/profile" });
     }, 1500);
@@ -321,9 +389,10 @@ export function Login() {
                     <Button
                       type="submit"
                       className="w-full"
+                      disabled={isLoading}
                       data-ocid="login.submit_button"
                     >
-                      Sign In
+                      {isLoading ? "Signing in..." : "Sign In"}
                     </Button>
 
                     <p className="text-center text-sm text-muted-foreground">

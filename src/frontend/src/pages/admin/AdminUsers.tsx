@@ -1,3 +1,4 @@
+import type { Backend } from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { Download, Eye, RefreshCw, Search, Users } from "lucide-react";
 import { motion } from "motion/react";
@@ -212,6 +214,7 @@ function courseColor(course?: string) {
 }
 
 export function AdminUsers() {
+  const { actor } = useActor();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Registration | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -219,19 +222,68 @@ export function AdminUsers() {
   const [showResetForm, setShowResetForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  async function fetchAllUsers() {
+    // Start with localStorage data
+    const local = getRegistrations();
+    setRegistrations(local);
+    // Merge with backend data
+    try {
+      if (actor) {
+        const backendUsers = await (
+          actor as unknown as Backend
+        ).getAllRegisteredUsers();
+        const merged = [...local];
+        for (const bu of backendUsers) {
+          const idx = merged.findIndex(
+            (u) =>
+              (u.username || "").toLowerCase() === bu.username.toLowerCase(),
+          );
+          const mapped: Registration = {
+            id: `user_${bu.username}`,
+            name: bu.fullName,
+            username: bu.username,
+            email: bu.email,
+            phone: bu.phone,
+            address: bu.address,
+            profile: bu.profileBio,
+            reason: bu.reason,
+            registeredAt: new Date(
+              Number(bu.createdAt) / 1_000_000,
+            ).toISOString(),
+            enrolledCourse: bu.enrolledCourse ?? undefined,
+            score:
+              bu.assessmentScore != null
+                ? Number(bu.assessmentScore)
+                : undefined,
+            passwordHash: bu.passwordHash,
+            disabled: bu.isDisabled,
+          };
+          if (idx >= 0) {
+            merged[idx] = { ...merged[idx], ...mapped };
+          } else {
+            merged.push(mapped);
+          }
+        }
+        setRegistrations(merged);
+      }
+    } catch (err) {
+      console.warn("Backend fetch users failed:", err);
+    }
+  }
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-fetch when actor changes
   useEffect(() => {
-    const refresh = () => setRegistrations(getRegistrations());
-    refresh();
-    window.addEventListener("storage", refresh);
-    window.addEventListener("alanghUserChanged", refresh);
+    fetchAllUsers();
+    window.addEventListener("storage", fetchAllUsers);
+    window.addEventListener("alanghUserChanged", fetchAllUsers);
     return () => {
-      window.removeEventListener("storage", refresh);
-      window.removeEventListener("alanghUserChanged", refresh);
+      window.removeEventListener("storage", fetchAllUsers);
+      window.removeEventListener("alanghUserChanged", fetchAllUsers);
     };
-  }, []);
+  }, [actor]); // re-run when actor becomes available
 
   function refresh() {
-    setRegistrations(getRegistrations());
+    fetchAllUsers();
   }
 
   const filtered = registrations.filter(
@@ -241,9 +293,10 @@ export function AdminUsers() {
       (r.username || "").toLowerCase().includes(search.toLowerCase()),
   );
 
-  function handleResetPassword() {
+  async function handleResetPassword() {
     if (!selected || !resetPw.trim()) return;
-    const updated = { ...selected, passwordHash: btoa(resetPw) };
+    const newHash = btoa(resetPw);
+    const updated = { ...selected, passwordHash: newHash };
     saveUserUpdate(updated);
     setSelected(updated);
     setResetPw("");
@@ -255,11 +308,21 @@ export function AdminUsers() {
       details: `Admin reset password for user: ${selected.name} (${selected.email})`,
       resource: selected.email,
     });
+    try {
+      if (actor && selected.username) {
+        await (actor as unknown as Backend).adminResetUserPassword(
+          selected.username,
+          newHash,
+        );
+      }
+    } catch (err) {
+      console.warn("Backend password reset failed:", err);
+    }
     toast.success(`Password reset for ${selected.name}`);
     refresh();
   }
 
-  function handleToggleDisable() {
+  async function handleToggleDisable() {
     if (!selected) return;
     const updated = { ...selected, disabled: !selected.disabled };
     saveUserUpdate(updated);
@@ -271,6 +334,16 @@ export function AdminUsers() {
       details: `Admin ${updated.disabled ? "disabled" : "enabled"} account for: ${selected.name} (${selected.email})`,
       resource: selected.email,
     });
+    try {
+      if (actor && selected.username) {
+        await (actor as unknown as Backend).adminSetUserDisabled(
+          selected.username,
+          !!updated.disabled,
+        );
+      }
+    } catch (err) {
+      console.warn("Backend disable/enable failed:", err);
+    }
     toast.success(
       updated.disabled
         ? `${selected.name} has been disabled.`
@@ -279,7 +352,7 @@ export function AdminUsers() {
     refresh();
   }
 
-  function handleDeleteUser() {
+  async function handleDeleteUser() {
     if (!selected) return;
     logAudit({
       actor: "admin",
@@ -289,6 +362,13 @@ export function AdminUsers() {
       resource: selected.email,
     });
     deleteUser(selected.email);
+    try {
+      if (actor && selected.username) {
+        await (actor as unknown as Backend).adminDeleteUser(selected.username);
+      }
+    } catch (err) {
+      console.warn("Backend delete failed:", err);
+    }
     toast.success(`${selected.name}'s account has been deleted.`);
     setSelected(null);
     setShowDeleteConfirm(false);
