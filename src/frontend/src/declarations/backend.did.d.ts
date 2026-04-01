@@ -10,6 +10,25 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AuditLog {
+  'id' : string,
+  'resource' : string,
+  'action' : string,
+  'actorType' : string,
+  'actorId' : string,
+  'timestamp' : bigint,
+  'details' : string,
+}
+export interface Certificate {
+  'username' : string,
+  'fullName' : string,
+  'email' : string,
+  'certificateId' : string,
+  'issuedAt' : bigint,
+  'courseName' : string,
+  'courseId' : string,
+  'revokedAt' : [] | [bigint],
+}
 export interface Chapter {
   'id' : bigint,
   'title' : string,
@@ -26,70 +45,139 @@ export interface Course {
 export type Level = { 'intermediate' : null } |
   { 'beginner' : null } |
   { 'advanced' : null };
+export type Principal = Principal;
+export interface TrainingResource {
+  'id' : string,
+  'url' : [] | [string],
+  'title' : string,
+  'content' : [] | [string],
+  'courseLevel' : string,
+  'description' : string,
+  'fileName' : [] | [string],
+  'isActive' : boolean,
+  'resourceType' : string,
+  'uploadedAt' : bigint,
+}
+export interface UserAccount {
+  'assessmentScore' : [] | [bigint],
+  'username' : string,
+  'createdAt' : bigint,
+  'fullName' : string,
+  'email' : string,
+  'assessmentPassed' : [] | [boolean],
+  'address' : string,
+  'passwordHash' : string,
+  'phone' : string,
+  'profileBio' : string,
+  'enrolledCourse' : [] | [string],
+  'isDisabled' : boolean,
+  'reason' : string,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
-export interface UserAccount {
-  'username' : string,
-  'fullName' : string,
-  'email' : string,
-  'passwordHash' : string,
-  'phone' : string,
-  'address' : string,
-  'profileBio' : string,
-  'reason' : string,
-  'createdAt' : bigint,
-  'isDisabled' : boolean,
-  'enrolledCourse' : [] | [string],
-  'assessmentScore' : [] | [bigint],
-  'assessmentPassed' : [] | [boolean],
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
 }
-export type RegisterResult = { 'ok' : null } | { 'err' : string };
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addAuditLog' : ActorMethod<[AuditLog], undefined>,
   'addChapter' : ActorMethod<[bigint, string, string, bigint], bigint>,
   'addCourse' : ActorMethod<[string, string, Level], bigint>,
+  'addTrainingResource' : ActorMethod<
+    [
+      string,
+      string,
+      string,
+      string,
+      string,
+      [] | [string],
+      [] | [string],
+      [] | [string],
+    ],
+    string
+  >,
+  'adminAssignCourse' : ActorMethod<[string, [] | [string]], boolean>,
+  'adminDeleteUser' : ActorMethod<[string], boolean>,
+  'adminResetUserPassword' : ActorMethod<[string, string], boolean>,
+  'adminSetUserDisabled' : ActorMethod<[string, boolean], boolean>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'deleteChapter' : ActorMethod<[bigint], undefined>,
   'deleteCourse' : ActorMethod<[bigint], undefined>,
+  'deleteTrainingResource' : ActorMethod<[string], undefined>,
   'enrollInCourse' : ActorMethod<[bigint], undefined>,
+  'getActiveResourcesByLevel' : ActorMethod<[string], Array<TrainingResource>>,
+  'getAllCertificates' : ActorMethod<[], Array<Certificate>>,
   'getAllCourses' : ActorMethod<[], Array<Course>>,
   'getAllEnrollments' : ActorMethod<[], Array<[Principal, Array<bigint>]>>,
+  'getAllRegisteredUsers' : ActorMethod<[], Array<UserAccount>>,
+  'getAllTrainingResources' : ActorMethod<[], Array<TrainingResource>>,
   'getAllUsers' : ActorMethod<[], Array<Principal>>,
+  'getAuditLogs' : ActorMethod<[], Array<AuditLog>>,
   'getCallerCourseProgress' : ActorMethod<
     [bigint],
     { 'completedChapters' : Array<bigint>, 'enrolled' : boolean }
   >,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getCertificateById' : ActorMethod<[string], [] | [Certificate]>,
+  'getCertificatesByUsername' : ActorMethod<[string], Array<Certificate>>,
   'getChaptersByCourse' : ActorMethod<[bigint], Array<Chapter>>,
   'getCompletedChapters' : ActorMethod<[], Array<bigint>>,
   'getCourseEnrollments' : ActorMethod<[], Array<bigint>>,
+  'getMaskedEmailByUsername' : ActorMethod<[string], [] | [string]>,
+  'getRecentAuditLogs' : ActorMethod<[bigint], Array<AuditLog>>,
+  'getUserByUsername' : ActorMethod<[string], [] | [UserAccount]>,
   'getUserCourseProgress' : ActorMethod<
     [Principal, bigint],
     { 'completedChapters' : Array<bigint>, 'enrolled' : boolean }
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'issueCertificate' : ActorMethod<
+    [string, string, string, string, string, string],
+    string
+  >,
+  'loginUser' : ActorMethod<[string, string], [] | [UserAccount]>,
   'markChapterComplete' : ActorMethod<[bigint], undefined>,
+  'registerUser' : ActorMethod<
+    [string, string, string, string, string, string, string, string, bigint],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
+  'revokeCertificate' : ActorMethod<[string], undefined>,
+  'saveAssessmentResult' : ActorMethod<[string, bigint, boolean], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'updateChapter' : ActorMethod<
     [bigint, bigint, string, string, bigint],
     undefined
   >,
   'updateCourse' : ActorMethod<[bigint, string, string, Level], undefined>,
-  // User account management
-  'registerUser' : ActorMethod<[string, string, string, string, string, string, string, string, bigint], RegisterResult>,
-  'loginUser' : ActorMethod<[string, string], [] | [UserAccount]>,
-  'getMaskedEmailByUsername' : ActorMethod<[string], [] | [string]>,
-  'saveAssessmentResult' : ActorMethod<[string, bigint, boolean], boolean>,
-  'getAllRegisteredUsers' : ActorMethod<[], Array<UserAccount>>,
-  'getUserByUsername' : ActorMethod<[string], [] | [UserAccount]>,
-  'adminResetUserPassword' : ActorMethod<[string, string], boolean>,
-  'adminSetUserDisabled' : ActorMethod<[string, boolean], boolean>,
-  'adminDeleteUser' : ActorMethod<[string], boolean>,
-  'adminAssignCourse' : ActorMethod<[string, [] | [string]], boolean>,
+  'updateTrainingResource' : ActorMethod<[string, TrainingResource], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

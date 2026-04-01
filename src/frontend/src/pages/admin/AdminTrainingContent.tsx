@@ -1,3 +1,4 @@
+import type { TrainingResource as BackendTrainingResource } from "@/backend.d.ts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import {
   BookOpen,
@@ -32,7 +34,7 @@ import {
   Video,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdminLayout } from "./AdminLayout";
 
@@ -320,8 +322,44 @@ function ResourceCard({
 }
 
 export function AdminTrainingContent() {
+  const { actor } = useActor();
   const [resources, setResources] = useState<TrainingResource[]>(loadResources);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Load resources from backend when actor is available
+  useEffect(() => {
+    if (!actor) return;
+    actor
+      .getAllTrainingResources()
+      .then((backendResources: BackendTrainingResource[]) => {
+        const mapped: TrainingResource[] = backendResources.map((br) => ({
+          id: br.id,
+          courseLevel: br.courseLevel as CourseLevel,
+          title: br.title,
+          description: br.description,
+          resourceType: br.resourceType as ResourceType,
+          url: br.url ?? undefined,
+          content: br.content ?? undefined,
+          fileName: br.fileName ?? undefined,
+          uploadedAt: new Date(Number(br.uploadedAt)).toISOString(),
+          isActive: br.isActive,
+        }));
+        // Merge with localStorage - prefer backend
+        const localResources = loadResources();
+        const merged = [...localResources];
+        for (const br of mapped) {
+          const idx = merged.findIndex((r) => r.id === br.id);
+          if (idx >= 0) {
+            merged[idx] = br;
+          } else {
+            merged.push(br);
+          }
+        }
+        saveResources(merged);
+        setResources(merged);
+      })
+      .catch(() => {});
+  }, [actor]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] =
     useState<Omit<TrainingResource, "id" | "uploadedAt">>(EMPTY_FORM);
@@ -378,6 +416,7 @@ export function AdminTrainingContent() {
       if (isFileType && selectedFile) {
         saveFileToIDB(editingId, selectedFile).catch(() => {});
       }
+      const updatedResource = resources.find((r) => r.id === editingId);
       updated = resources.map((r) =>
         r.id === editingId
           ? {
@@ -392,6 +431,27 @@ export function AdminTrainingContent() {
             }
           : r,
       );
+      // Push update to backend
+      if (actor && updatedResource) {
+        const newData = updated.find((r) => r.id === editingId);
+        if (newData) {
+          const backendResource: BackendTrainingResource = {
+            id: newData.id,
+            courseLevel: newData.courseLevel,
+            title: newData.title,
+            description: newData.description,
+            resourceType: newData.resourceType,
+            url: newData.url,
+            content: newData.content,
+            fileName: newData.fileName,
+            isActive: newData.isActive,
+            uploadedAt: BigInt(new Date(newData.uploadedAt).getTime()),
+          };
+          actor
+            .updateTrainingResource(editingId, backendResource)
+            .catch(() => {});
+        }
+      }
       toast.success("Resource updated successfully!");
     } else {
       const newId = Date.now().toString();
@@ -407,6 +467,23 @@ export function AdminTrainingContent() {
         uploadedAt: new Date().toISOString(),
       };
       updated = [...resources, newResource];
+
+      // Push to backend
+      if (actor) {
+        actor
+          .addTrainingResource(
+            newId,
+            newResource.courseLevel,
+            newResource.title,
+            newResource.description,
+            newResource.resourceType,
+            newResource.url || null,
+            newResource.content || null,
+            newResource.fileName || null,
+          )
+          .catch(() => {});
+      }
+
       logAudit({
         actor: "admin",
         actorType: "admin",
@@ -428,6 +505,10 @@ export function AdminTrainingContent() {
     try {
       deleteFileFromIDB(id).catch(() => {});
     } catch {}
+    // Push delete to backend
+    if (actor) {
+      actor.deleteTrainingResource(id).catch(() => {});
+    }
     const updated = resources.filter((r) => r.id !== id);
     setResources(updated);
     saveResources(updated);
@@ -448,6 +529,25 @@ export function AdminTrainingContent() {
     );
     setResources(updated);
     saveResources(updated);
+    // Push toggle to backend
+    if (actor) {
+      const newData = updated.find((r) => r.id === id);
+      if (newData) {
+        const backendResource: BackendTrainingResource = {
+          id: newData.id,
+          courseLevel: newData.courseLevel,
+          title: newData.title,
+          description: newData.description,
+          resourceType: newData.resourceType,
+          url: newData.url,
+          content: newData.content,
+          fileName: newData.fileName,
+          isActive: newData.isActive,
+          uploadedAt: BigInt(new Date(newData.uploadedAt).getTime()),
+        };
+        actor.updateTrainingResource(id, backendResource).catch(() => {});
+      }
+    }
   };
 
   const urlLabel = {

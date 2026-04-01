@@ -1,3 +1,4 @@
+import type { Certificate as BackendCertificate } from "@/backend.d.ts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { Award, CheckCircle2, ExternalLink, ShieldOff } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminLayout } from "./AdminLayout";
 
 interface AssessmentResult {
@@ -58,6 +60,22 @@ function saveCerts(certs: Certificate[]) {
   localStorage.setItem("alangh_certificates", JSON.stringify(certs));
 }
 
+function mapBackendCert(bc: BackendCertificate): Certificate {
+  return {
+    certificateId: bc.certificateId,
+    userId: bc.username,
+    userName: bc.fullName,
+    userEmail: bc.email,
+    courseId: bc.courseId,
+    courseName: bc.courseName,
+    issuedAt: new Date(Number(bc.issuedAt)).toISOString(),
+    revokedAt:
+      bc.revokedAt != null
+        ? new Date(Number(bc.revokedAt)).toISOString()
+        : undefined,
+  };
+}
+
 interface StudentEntry {
   userId: string;
   userName: string;
@@ -66,7 +84,7 @@ interface StudentEntry {
   latestDate: string;
 }
 
-function getPassedStudents(): StudentEntry[] {
+function getPassedStudentsFromResults(): StudentEntry[] {
   const results = loadResults().filter((r) => r.passed);
   const map = new Map<string, StudentEntry>();
   for (const r of results) {
@@ -85,9 +103,67 @@ function getPassedStudents(): StudentEntry[] {
 }
 
 export function AdminCertificates() {
+  const { actor } = useActor();
   const [certs, setCerts] = useState<Certificate[]>(loadCerts);
+  const [students, setStudents] = useState<StudentEntry[]>(() =>
+    getPassedStudentsFromResults(),
+  );
 
-  const students = getPassedStudents();
+  // Load certs and students from backend when actor is available
+  useEffect(() => {
+    if (!actor) return;
+
+    // Load all certificates from backend
+    actor
+      .getAllCertificates()
+      .then((backendCerts) => {
+        const mapped = backendCerts.map(mapBackendCert);
+        // Merge with localStorage - prefer backend
+        const localCerts = loadCerts();
+        const merged = [...localCerts];
+        for (const bc of mapped) {
+          const idx = merged.findIndex(
+            (c) => c.certificateId === bc.certificateId,
+          );
+          if (idx >= 0) {
+            merged[idx] = bc;
+          } else {
+            merged.push(bc);
+          }
+        }
+        saveCerts(merged);
+        setCerts(merged);
+      })
+      .catch(() => {});
+
+    // Load registered users from backend to get passed students
+    actor
+      .getAllRegisteredUsers()
+      .then((users) => {
+        const passedUsers = users.filter((u) => u.assessmentPassed === true);
+        if (passedUsers.length > 0) {
+          const backendStudents: StudentEntry[] = passedUsers.map((u) => ({
+            userId: u.username,
+            userName: u.fullName,
+            userEmail: u.email,
+            bestScore:
+              u.assessmentScore != null ? Number(u.assessmentScore) : 0,
+            latestDate: new Date(Number(u.createdAt)).toISOString(),
+          }));
+          // Merge with local results
+          const localStudents = getPassedStudentsFromResults();
+          const map = new Map<string, StudentEntry>();
+          for (const s of [...localStudents, ...backendStudents]) {
+            const existing = map.get(s.userId);
+            if (!existing || s.bestScore > existing.bestScore) {
+              map.set(s.userId, s);
+            }
+          }
+          setStudents(Array.from(map.values()));
+        }
+      })
+      .catch(() => {});
+  }, [actor]);
 
   const getCertForUser = (userId: string) =>
     certs.find((c) => c.userId === userId);
@@ -99,7 +175,7 @@ export function AdminCertificates() {
       userName: student.userName,
       userEmail: student.userEmail,
       courseId: "beginner",
-      courseName: "Alangh Cybersecurity Foundation (HackStart™)",
+      courseName: "Alangh Cybersecurity Foundation (HackStart\u2122)",
       issuedAt: new Date().toISOString(),
     };
     const updated = [
@@ -108,6 +184,21 @@ export function AdminCertificates() {
     ];
     saveCerts(updated);
     setCerts(updated);
+
+    // Push to backend
+    if (actor) {
+      actor
+        .issueCertificate(
+          newCert.certificateId,
+          student.userId,
+          student.userName,
+          student.userEmail,
+          newCert.courseId,
+          newCert.courseName,
+        )
+        .catch(() => {});
+    }
+
     logAudit({
       actor: "admin",
       actorType: "admin",
@@ -126,6 +217,12 @@ export function AdminCertificates() {
     const revoked = certs.find((c) => c.certificateId === certId);
     saveCerts(updated);
     setCerts(updated);
+
+    // Push to backend
+    if (actor) {
+      actor.revokeCertificate(certId).catch(() => {});
+    }
+
     if (revoked)
       logAudit({
         actor: "admin",

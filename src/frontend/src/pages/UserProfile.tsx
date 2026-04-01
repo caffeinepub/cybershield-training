@@ -1,3 +1,4 @@
+import type { Certificate as BackendCertificate } from "@/backend.d.ts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useActor } from "@/hooks/useActor";
 import { Link } from "@tanstack/react-router";
 import {
   Award,
@@ -88,6 +90,7 @@ function courseIdFromEnrolled(enrolled: string): string {
 
 export function UserProfile() {
   const currentUser = load<CurrentUser | null>("alangh_current_user", null);
+  const { actor } = useActor();
 
   const [assessmentResults, setAssessmentResults] = useState<
     AssessmentResult[]
@@ -123,6 +126,84 @@ export function UserProfile() {
     const myReg = registrations.find((r) => r.email === currentUser.email);
     setAssignedCourse(myReg?.enrolledCourse || null);
   }, [currentUser]);
+
+  // Load certificates from backend and merge
+  useEffect(() => {
+    if (!actor || !currentUser) return;
+    const username =
+      (currentUser as CurrentUser & { username?: string }).username ||
+      currentUser.id;
+    actor
+      .getCertificatesByUsername(username)
+      .then((backendCerts: BackendCertificate[]) => {
+        const mapped: Certificate[] = backendCerts
+          .filter((bc) => !bc.revokedAt)
+          .map((bc) => ({
+            certificateId: bc.certificateId,
+            userId: bc.username,
+            userName: bc.fullName,
+            userEmail: bc.email,
+            courseId: bc.courseId,
+            courseName: bc.courseName,
+            issuedAt: new Date(Number(bc.issuedAt)).toISOString(),
+            revokedAt:
+              bc.revokedAt != null
+                ? new Date(Number(bc.revokedAt)).toISOString()
+                : undefined,
+          }));
+        setCertificates((prev) => {
+          // Merge: prefer backend certs, dedup by certificateId
+          const map = new Map<string, Certificate>();
+          for (const c of [...prev, ...mapped]) {
+            map.set(c.certificateId, c);
+          }
+          return Array.from(map.values()).filter((c) => !c.revokedAt);
+        });
+      })
+      .catch(() => {});
+
+    // Load assessment results from backend
+    actor
+      .getUserByUsername(
+        (currentUser as CurrentUser & { username?: string }).username ||
+          currentUser.id,
+      )
+      .then((user) => {
+        if (user?.assessmentPassed) {
+          const backendResult: AssessmentResult = {
+            userId: user.username,
+            userName: user.fullName,
+            userEmail: user.email,
+            score:
+              user.assessmentScore != null ? Number(user.assessmentScore) : 0,
+            passed: user.assessmentPassed,
+            date: new Date(Number(user.createdAt)).toISOString(),
+            attempt: 1,
+          };
+          setAssessmentResults((prev) => {
+            const hasBackend = prev.some(
+              (r) => r.userId === user.username && r.passed,
+            );
+            if (hasBackend) return prev;
+            return [backendResult, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+
+    // Load assigned course from backend
+    actor
+      .getUserByUsername(
+        (currentUser as CurrentUser & { username?: string }).username ||
+          currentUser.id,
+      )
+      .then((user) => {
+        if (user?.enrolledCourse) {
+          setAssignedCourse(user.enrolledCourse);
+        }
+      })
+      .catch(() => {});
+  }, [actor, currentUser]);
 
   if (!currentUser) {
     return (

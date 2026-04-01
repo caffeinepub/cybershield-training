@@ -6,9 +6,12 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Toaster } from "sonner";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
+import { useActor } from "./hooks/useActor";
+import { setAuditBackendActor } from "./lib/auditLog";
 import { AboutUs } from "./pages/AboutUs";
 import { Blog } from "./pages/Blog";
 import { Certificate } from "./pages/Certificate";
@@ -45,11 +48,20 @@ import { AdminSchedule } from "./pages/admin/AdminSchedule";
 import { AdminTrainingContent } from "./pages/admin/AdminTrainingContent";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 
+function BackendActorSync() {
+  const { actor } = useActor();
+  useEffect(() => {
+    setAuditBackendActor(actor);
+  }, [actor]);
+  return null;
+}
+
 const queryClient = new QueryClient();
 
 const rootRoute = createRootRoute({
   component: () => (
     <QueryClientProvider client={queryClient}>
+      <BackendActorSync />
       <div className="min-h-screen bg-background text-foreground flex flex-col">
         <Navbar />
         <div className="flex-1">

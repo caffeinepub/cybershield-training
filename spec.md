@@ -1,40 +1,43 @@
-# Alangh Academy — ICP Backend: User Registration & Login (Stage 1)
+# Alangh Academy — Stage 2 Backend Integration
 
 ## Current State
-All user registration and login data is stored in browser localStorage (`alangh_users` key). This means data is device-specific, not persistent across devices, and lost if the browser is cleared. The backend canister exists and manages courses/chapters/enrollments, but has no knowledge of user accounts (username/password).
-
-The frontend Register page collects: fullName, username, email, password (hashed), phone, address, profile bio, reason.
-The frontend Login page authenticates by matching username + passwordHash against localStorage.
+- Stage 1 complete: User registration, login, and assessment results persist to ICP backend canister
+- Certificates: stored in browser localStorage only
+- Training resource metadata: stored in browser localStorage; file binaries in IndexedDB
+- Audit logs: stored in browser localStorage only
+- Admin certificate management reads/writes localStorage
+- Admin training content upload reads/writes localStorage + IndexedDB
 
 ## Requested Changes (Diff)
 
 ### Add
-- Backend `UserAccount` type: username, fullName, email, passwordHash, phone, address, profileBio, reason, createdAt, isDisabled, enrolledCourse (optional text), assessmentScore (optional Nat), assessmentPassed (optional Bool)
-- `registerUser(username, fullName, email, passwordHash, phone, address, profileBio, reason)` — public (no caller auth), returns error text if username/email already taken
-- `loginUser(username, passwordHash)` — public, returns UserAccount or null
-- `getUserByUsername(username)` — admin only, returns full UserAccount
-- `getAllRegisteredUsers()` — admin only, returns all UserAccounts
-- `adminResetUserPassword(username, newPasswordHash)` — admin only
-- `adminSetUserDisabled(username, isDisabled)` — admin only
-- `adminDeleteUser(username)` — admin only
-- `adminAssignCourse(username, enrolledCourse)` — admin only
-- `saveAssessmentResult(username, score, passed)` — public (user saves their own result after login)
-- `getMaskedEmailByUsername(username)` — public, for forgot-password flow: returns masked email if username exists
-- Keep all existing course/chapter/enrollment/progress backend APIs unchanged
+- Backend: `Certificate` type with fields: certificateId, username, fullName, email, courseId, courseName, issuedAt, revokedAt
+- Backend: `issueCertificate`, `revokeCertificate`, `getCertificateById`, `getAllCertificates`, `getCertificatesByUsername` functions
+- Backend: `TrainingResource` type with fields: id, courseLevel, title, description, resourceType, url, content, fileName, uploadedAt, isActive
+- Backend: `addTrainingResource`, `updateTrainingResource`, `deleteTrainingResource`, `getAllTrainingResources`, `getActiveResourcesByLevel` functions
+- Backend: `AuditLog` type with fields: id, timestamp, actor, actorType, action, details, resource
+- Backend: `addAuditLog`, `getAuditLogs`, `getAuditLogsByActor` functions
+- Frontend: backend API calls in AdminCertificates.tsx for issue/revoke/load
+- Frontend: backend API calls in AdminTrainingContent.tsx for CRUD resource metadata
+- Frontend: backend API calls in auditLog.ts lib to persist logs server-side
+- Frontend: UserProfile.tsx loads certificates from backend
+- Frontend: CourseLearn.tsx loads active training resources from backend
 
 ### Modify
-- Existing UserProfile to remain as-is (used for Internet Identity profiles)
-- No changes to existing course management functions
+- AdminCertificates.tsx: replace localStorage reads/writes with backend calls; keep localStorage as fallback
+- AdminTrainingContent.tsx: save/load resource metadata from backend; file binaries stay in IndexedDB
+- SelfAssessment.tsx: check backend for certificate on pass screen
+- lib/auditLog.ts: push logs to backend in addition to localStorage
+- backend.d.ts: add new type definitions
 
 ### Remove
-- Nothing removed from backend
+- Nothing removed; localStorage kept as fallback for offline resilience
 
 ## Implementation Plan
-1. Add `UserAccount` stable data type and `Map<Text, UserAccount>` storage (keyed by username)
-2. Add secondary index `emailToUsername: Map<Text, Text>` for uniqueness checks
-3. Implement all public and admin user management functions
-4. Preserve all existing course/chapter/progress functions
-5. Update frontend Register.tsx to hash password client-side (SHA-256 via crypto.subtle) and call `registerUser` backend function
-6. Update frontend Login.tsx to hash password and call `loginUser` backend function; store returned user data in sessionStorage/localStorage for session
-7. Update frontend ForgotPassword.tsx to call `getMaskedEmailByUsername`
-8. Update AdminUsers page to call `getAllRegisteredUsers`, `adminResetUserPassword`, `adminSetUserDisabled`, `adminDeleteUser`, `adminAssignCourse`
+1. Generate new Motoko backend with Certificate, TrainingResource, AuditLog stable storage and all CRUD functions
+2. Update backend.d.ts with new TypeScript type definitions
+3. Update AdminCertificates.tsx to call backend APIs
+4. Update AdminTrainingContent.tsx to persist metadata to backend
+5. Update lib/auditLog.ts to also call backend addAuditLog
+6. Update UserProfile.tsx and CourseLearn.tsx to load from backend
+7. Validate and deploy

@@ -8,6 +8,26 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
+});
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const AuditLog = IDL.Record({
+  'id' : IDL.Text,
+  'resource' : IDL.Text,
+  'action' : IDL.Text,
+  'actorType' : IDL.Text,
+  'actorId' : IDL.Text,
+  'timestamp' : IDL.Int,
+  'details' : IDL.Text,
+});
 export const Level = IDL.Variant({
   'intermediate' : IDL.Null,
   'beginner' : IDL.Null,
@@ -18,11 +38,49 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const TrainingResource = IDL.Record({
+  'id' : IDL.Text,
+  'url' : IDL.Opt(IDL.Text),
+  'title' : IDL.Text,
+  'content' : IDL.Opt(IDL.Text),
+  'courseLevel' : IDL.Text,
+  'description' : IDL.Text,
+  'fileName' : IDL.Opt(IDL.Text),
+  'isActive' : IDL.Bool,
+  'resourceType' : IDL.Text,
+  'uploadedAt' : IDL.Int,
+});
+export const Certificate = IDL.Record({
+  'username' : IDL.Text,
+  'fullName' : IDL.Text,
+  'email' : IDL.Text,
+  'certificateId' : IDL.Text,
+  'issuedAt' : IDL.Int,
+  'courseName' : IDL.Text,
+  'courseId' : IDL.Text,
+  'revokedAt' : IDL.Opt(IDL.Int),
+});
 export const Course = IDL.Record({
   'id' : IDL.Nat,
   'title' : IDL.Text,
   'description' : IDL.Text,
   'level' : Level,
+});
+export const Principal = IDL.Principal;
+export const UserAccount = IDL.Record({
+  'assessmentScore' : IDL.Opt(IDL.Nat),
+  'username' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'fullName' : IDL.Text,
+  'email' : IDL.Text,
+  'assessmentPassed' : IDL.Opt(IDL.Bool),
+  'address' : IDL.Text,
+  'passwordHash' : IDL.Text,
+  'phone' : IDL.Text,
+  'profileBio' : IDL.Text,
+  'enrolledCourse' : IDL.Opt(IDL.Text),
+  'isDisabled' : IDL.Bool,
+  'reason' : IDL.Text,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const Chapter = IDL.Record({
@@ -32,42 +90,85 @@ export const Chapter = IDL.Record({
   'order' : IDL.Nat,
   'courseId' : IDL.Nat,
 });
-export const UserAccount = IDL.Record({
-  'username' : IDL.Text,
-  'fullName' : IDL.Text,
-  'email' : IDL.Text,
-  'passwordHash' : IDL.Text,
-  'phone' : IDL.Text,
-  'address' : IDL.Text,
-  'profileBio' : IDL.Text,
-  'reason' : IDL.Text,
-  'createdAt' : IDL.Int,
-  'isDisabled' : IDL.Bool,
-  'enrolledCourse' : IDL.Opt(IDL.Text),
-  'assessmentScore' : IDL.Opt(IDL.Nat),
-  'assessmentPassed' : IDL.Opt(IDL.Bool),
-});
-export const RegisterResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
 
 export const idlService = IDL.Service({
+  '_caffeineStorageBlobIsLive' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Bool],
+      ['query'],
+    ),
+  '_caffeineStorageBlobsToDelete' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      [],
+      [],
+    ),
+  '_caffeineStorageCreateCertificate' : IDL.Func(
+      [IDL.Text],
+      [_CaffeineStorageCreateCertificateResult],
+      [],
+    ),
+  '_caffeineStorageRefillCashier' : IDL.Func(
+      [IDL.Opt(_CaffeineStorageRefillInformation)],
+      [_CaffeineStorageRefillResult],
+      [],
+    ),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addAuditLog' : IDL.Func([AuditLog], [], []),
   'addChapter' : IDL.Func(
       [IDL.Nat, IDL.Text, IDL.Text, IDL.Nat],
       [IDL.Nat],
       [],
     ),
   'addCourse' : IDL.Func([IDL.Text, IDL.Text, Level], [IDL.Nat], []),
+  'addTrainingResource' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+      ],
+      [IDL.Text],
+      [],
+    ),
+  'adminAssignCourse' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [IDL.Bool], []),
+  'adminDeleteUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'adminResetUserPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'adminSetUserDisabled' : IDL.Func([IDL.Text, IDL.Bool], [IDL.Bool], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'deleteChapter' : IDL.Func([IDL.Nat], [], []),
   'deleteCourse' : IDL.Func([IDL.Nat], [], []),
+  'deleteTrainingResource' : IDL.Func([IDL.Text], [], []),
   'enrollInCourse' : IDL.Func([IDL.Nat], [], []),
+  'getActiveResourcesByLevel' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(TrainingResource)],
+      ['query'],
+    ),
+  'getAllCertificates' : IDL.Func([], [IDL.Vec(Certificate)], ['query']),
   'getAllCourses' : IDL.Func([], [IDL.Vec(Course)], ['query']),
   'getAllEnrollments' : IDL.Func(
       [],
-      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(IDL.Nat)))],
+      [IDL.Vec(IDL.Tuple(Principal, IDL.Vec(IDL.Nat)))],
       ['query'],
     ),
-  'getAllUsers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
+  'getAllRegisteredUsers' : IDL.Func([], [IDL.Vec(UserAccount)], ['query']),
+  'getAllTrainingResources' : IDL.Func(
+      [],
+      [IDL.Vec(TrainingResource)],
+      ['query'],
+    ),
+  'getAllUsers' : IDL.Func([], [IDL.Vec(Principal)], ['query']),
+  'getAuditLogs' : IDL.Func([], [IDL.Vec(AuditLog)], ['query']),
   'getCallerCourseProgress' : IDL.Func(
       [IDL.Nat],
       [
@@ -80,11 +181,28 @@ export const idlService = IDL.Service({
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getCertificateById' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(Certificate)],
+      ['query'],
+    ),
+  'getCertificatesByUsername' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(Certificate)],
+      ['query'],
+    ),
   'getChaptersByCourse' : IDL.Func([IDL.Nat], [IDL.Vec(Chapter)], ['query']),
   'getCompletedChapters' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
   'getCourseEnrollments' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
+  'getMaskedEmailByUsername' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(IDL.Text)],
+      ['query'],
+    ),
+  'getRecentAuditLogs' : IDL.Func([IDL.Nat], [IDL.Vec(AuditLog)], ['query']),
+  'getUserByUsername' : IDL.Func([IDL.Text], [IDL.Opt(UserAccount)], ['query']),
   'getUserCourseProgress' : IDL.Func(
-      [IDL.Principal, IDL.Nat],
+      [Principal, IDL.Nat],
       [
         IDL.Record({
           'completedChapters' : IDL.Vec(IDL.Nat),
@@ -93,13 +211,40 @@ export const idlService = IDL.Service({
       ],
       ['query'],
     ),
-  'getUserProfile' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Opt(UserProfile)],
+  'getUserProfile' : IDL.Func([Principal], [IDL.Opt(UserProfile)], ['query']),
+  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'issueCertificate' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Text],
+      [],
+    ),
+  'loginUser' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Opt(UserAccount)],
       ['query'],
     ),
-  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'markChapterComplete' : IDL.Func([IDL.Nat], [], []),
+  'registerUser' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Int,
+      ],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
+  'revokeCertificate' : IDL.Func([IDL.Text], [], []),
+  'saveAssessmentResult' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Bool],
+      [IDL.Bool],
+      [],
+    ),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'updateChapter' : IDL.Func(
       [IDL.Nat, IDL.Nat, IDL.Text, IDL.Text, IDL.Nat],
@@ -107,22 +252,32 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateCourse' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, Level], [], []),
-  // User account management
-  'registerUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Int], [RegisterResult], []),
-  'loginUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(UserAccount)], ['query']),
-  'getMaskedEmailByUsername' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
-  'saveAssessmentResult' : IDL.Func([IDL.Text, IDL.Nat, IDL.Bool], [IDL.Bool], []),
-  'getAllRegisteredUsers' : IDL.Func([], [IDL.Vec(UserAccount)], ['query']),
-  'getUserByUsername' : IDL.Func([IDL.Text], [IDL.Opt(UserAccount)], ['query']),
-  'adminResetUserPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-  'adminSetUserDisabled' : IDL.Func([IDL.Text, IDL.Bool], [IDL.Bool], []),
-  'adminDeleteUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
-  'adminAssignCourse' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [IDL.Bool], []),
+  'updateTrainingResource' : IDL.Func([IDL.Text, TrainingResource], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
+  });
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const AuditLog = IDL.Record({
+    'id' : IDL.Text,
+    'resource' : IDL.Text,
+    'action' : IDL.Text,
+    'actorType' : IDL.Text,
+    'actorId' : IDL.Text,
+    'timestamp' : IDL.Int,
+    'details' : IDL.Text,
+  });
   const Level = IDL.Variant({
     'intermediate' : IDL.Null,
     'beginner' : IDL.Null,
@@ -133,11 +288,49 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const TrainingResource = IDL.Record({
+    'id' : IDL.Text,
+    'url' : IDL.Opt(IDL.Text),
+    'title' : IDL.Text,
+    'content' : IDL.Opt(IDL.Text),
+    'courseLevel' : IDL.Text,
+    'description' : IDL.Text,
+    'fileName' : IDL.Opt(IDL.Text),
+    'isActive' : IDL.Bool,
+    'resourceType' : IDL.Text,
+    'uploadedAt' : IDL.Int,
+  });
+  const Certificate = IDL.Record({
+    'username' : IDL.Text,
+    'fullName' : IDL.Text,
+    'email' : IDL.Text,
+    'certificateId' : IDL.Text,
+    'issuedAt' : IDL.Int,
+    'courseName' : IDL.Text,
+    'courseId' : IDL.Text,
+    'revokedAt' : IDL.Opt(IDL.Int),
+  });
   const Course = IDL.Record({
     'id' : IDL.Nat,
     'title' : IDL.Text,
     'description' : IDL.Text,
     'level' : Level,
+  });
+  const Principal = IDL.Principal;
+  const UserAccount = IDL.Record({
+    'assessmentScore' : IDL.Opt(IDL.Nat),
+    'username' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'fullName' : IDL.Text,
+    'email' : IDL.Text,
+    'assessmentPassed' : IDL.Opt(IDL.Bool),
+    'address' : IDL.Text,
+    'passwordHash' : IDL.Text,
+    'phone' : IDL.Text,
+    'profileBio' : IDL.Text,
+    'enrolledCourse' : IDL.Opt(IDL.Text),
+    'isDisabled' : IDL.Bool,
+    'reason' : IDL.Text,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const Chapter = IDL.Record({
@@ -147,42 +340,89 @@ export const idlFactory = ({ IDL }) => {
     'order' : IDL.Nat,
     'courseId' : IDL.Nat,
   });
-  const UserAccount = IDL.Record({
-    'username' : IDL.Text,
-    'fullName' : IDL.Text,
-    'email' : IDL.Text,
-    'passwordHash' : IDL.Text,
-    'phone' : IDL.Text,
-    'address' : IDL.Text,
-    'profileBio' : IDL.Text,
-    'reason' : IDL.Text,
-    'createdAt' : IDL.Int,
-    'isDisabled' : IDL.Bool,
-    'enrolledCourse' : IDL.Opt(IDL.Text),
-    'assessmentScore' : IDL.Opt(IDL.Nat),
-    'assessmentPassed' : IDL.Opt(IDL.Bool),
-  });
-  const RegisterResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   
   return IDL.Service({
+    '_caffeineStorageBlobIsLive' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Bool],
+        ['query'],
+      ),
+    '_caffeineStorageBlobsToDelete' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        [],
+        [],
+      ),
+    '_caffeineStorageCreateCertificate' : IDL.Func(
+        [IDL.Text],
+        [_CaffeineStorageCreateCertificateResult],
+        [],
+      ),
+    '_caffeineStorageRefillCashier' : IDL.Func(
+        [IDL.Opt(_CaffeineStorageRefillInformation)],
+        [_CaffeineStorageRefillResult],
+        [],
+      ),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addAuditLog' : IDL.Func([AuditLog], [], []),
     'addChapter' : IDL.Func(
         [IDL.Nat, IDL.Text, IDL.Text, IDL.Nat],
         [IDL.Nat],
         [],
       ),
     'addCourse' : IDL.Func([IDL.Text, IDL.Text, Level], [IDL.Nat], []),
+    'addTrainingResource' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+        ],
+        [IDL.Text],
+        [],
+      ),
+    'adminAssignCourse' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text)],
+        [IDL.Bool],
+        [],
+      ),
+    'adminDeleteUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'adminResetUserPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'adminSetUserDisabled' : IDL.Func([IDL.Text, IDL.Bool], [IDL.Bool], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'deleteChapter' : IDL.Func([IDL.Nat], [], []),
     'deleteCourse' : IDL.Func([IDL.Nat], [], []),
+    'deleteTrainingResource' : IDL.Func([IDL.Text], [], []),
     'enrollInCourse' : IDL.Func([IDL.Nat], [], []),
+    'getActiveResourcesByLevel' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(TrainingResource)],
+        ['query'],
+      ),
+    'getAllCertificates' : IDL.Func([], [IDL.Vec(Certificate)], ['query']),
     'getAllCourses' : IDL.Func([], [IDL.Vec(Course)], ['query']),
     'getAllEnrollments' : IDL.Func(
         [],
-        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(IDL.Nat)))],
+        [IDL.Vec(IDL.Tuple(Principal, IDL.Vec(IDL.Nat)))],
         ['query'],
       ),
-    'getAllUsers' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
+    'getAllRegisteredUsers' : IDL.Func([], [IDL.Vec(UserAccount)], ['query']),
+    'getAllTrainingResources' : IDL.Func(
+        [],
+        [IDL.Vec(TrainingResource)],
+        ['query'],
+      ),
+    'getAllUsers' : IDL.Func([], [IDL.Vec(Principal)], ['query']),
+    'getAuditLogs' : IDL.Func([], [IDL.Vec(AuditLog)], ['query']),
     'getCallerCourseProgress' : IDL.Func(
         [IDL.Nat],
         [
@@ -195,11 +435,32 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getCertificateById' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(Certificate)],
+        ['query'],
+      ),
+    'getCertificatesByUsername' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(Certificate)],
+        ['query'],
+      ),
     'getChaptersByCourse' : IDL.Func([IDL.Nat], [IDL.Vec(Chapter)], ['query']),
     'getCompletedChapters' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
     'getCourseEnrollments' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
+    'getMaskedEmailByUsername' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(IDL.Text)],
+        ['query'],
+      ),
+    'getRecentAuditLogs' : IDL.Func([IDL.Nat], [IDL.Vec(AuditLog)], ['query']),
+    'getUserByUsername' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(UserAccount)],
+        ['query'],
+      ),
     'getUserCourseProgress' : IDL.Func(
-        [IDL.Principal, IDL.Nat],
+        [Principal, IDL.Nat],
         [
           IDL.Record({
             'completedChapters' : IDL.Vec(IDL.Nat),
@@ -208,13 +469,40 @@ export const idlFactory = ({ IDL }) => {
         ],
         ['query'],
       ),
-    'getUserProfile' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Opt(UserProfile)],
+    'getUserProfile' : IDL.Func([Principal], [IDL.Opt(UserProfile)], ['query']),
+    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'issueCertificate' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Text],
+        [],
+      ),
+    'loginUser' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Opt(UserAccount)],
         ['query'],
       ),
-    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'markChapterComplete' : IDL.Func([IDL.Nat], [], []),
+    'registerUser' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Int,
+        ],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
+    'revokeCertificate' : IDL.Func([IDL.Text], [], []),
+    'saveAssessmentResult' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Bool],
+        [IDL.Bool],
+        [],
+      ),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'updateChapter' : IDL.Func(
         [IDL.Nat, IDL.Nat, IDL.Text, IDL.Text, IDL.Nat],
@@ -222,16 +510,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateCourse' : IDL.Func([IDL.Nat, IDL.Text, IDL.Text, Level], [], []),
-    'registerUser' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Int], [RegisterResult], []),
-    'loginUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(UserAccount)], ['query']),
-    'getMaskedEmailByUsername' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
-    'saveAssessmentResult' : IDL.Func([IDL.Text, IDL.Nat, IDL.Bool], [IDL.Bool], []),
-    'getAllRegisteredUsers' : IDL.Func([], [IDL.Vec(UserAccount)], ['query']),
-    'getUserByUsername' : IDL.Func([IDL.Text], [IDL.Opt(UserAccount)], ['query']),
-    'adminResetUserPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-    'adminSetUserDisabled' : IDL.Func([IDL.Text, IDL.Bool], [IDL.Bool], []),
-    'adminDeleteUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
-    'adminAssignCourse' : IDL.Func([IDL.Text, IDL.Opt(IDL.Text)], [IDL.Bool], []),
+    'updateTrainingResource' : IDL.Func([IDL.Text, TrainingResource], [], []),
   });
 };
 

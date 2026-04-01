@@ -24,13 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActor } from "@/hooks/useActor";
 import {
   type AuditLogEntry,
   clearAuditLogs,
   getAuditLogs,
 } from "@/lib/auditLog";
 import { Download, Search, Shield, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminLayout } from "./AdminLayout";
 
 type DateRange = "24h" | "7d" | "30d" | "all";
@@ -126,9 +127,40 @@ function exportCsv(logs: AuditLogEntry[]) {
 }
 
 export function AdminAuditLogs() {
+  const { actor } = useActor();
   const [rawLogs, setRawLogs] = useState<AuditLogEntry[]>(() =>
     getAuditLogs().reverse(),
   );
+
+  // Load logs from backend and merge with localStorage
+  useEffect(() => {
+    if (!actor) return;
+    actor
+      .getAuditLogs()
+      .then((backendLogs) => {
+        const mapped: AuditLogEntry[] = backendLogs.map((bl) => ({
+          id: bl.id,
+          timestamp: new Date(Number(bl.timestamp)).toISOString(),
+          actor: bl.actorId,
+          actorType: bl.actorType as AuditLogEntry["actorType"],
+          action: bl.action,
+          details: bl.details,
+          resource: bl.resource || undefined,
+        }));
+        const localLogs = getAuditLogs();
+        // Merge and dedup by id
+        const allMap = new Map<string, AuditLogEntry>();
+        for (const l of [...localLogs, ...mapped]) {
+          allMap.set(l.id, l);
+        }
+        const merged = Array.from(allMap.values()).sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+        setRawLogs(merged);
+      })
+      .catch(() => {});
+  }, [actor]);
   const [search, setSearch] = useState("");
   const [actorFilter, setActorFilter] = useState<ActorFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");

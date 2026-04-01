@@ -1,7 +1,9 @@
+import type { TrainingResource as BackendTrainingResource } from "@/backend.d.ts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useActor } from "@/hooks/useActor";
 import { logAudit } from "@/lib/auditLog";
 import { Link, useParams } from "@tanstack/react-router";
 import {
@@ -14,7 +16,7 @@ import {
   Shield,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const IDB_NAME = "alangh_training_files";
 const IDB_STORE = "files";

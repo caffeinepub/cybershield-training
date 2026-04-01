@@ -1,3 +1,8 @@
+import type {
+  AuditLog as BackendAuditLog,
+  backendInterface,
+} from "@/backend.d.ts";
+
 export interface AuditLogEntry {
   id: string;
   timestamp: string;
@@ -11,6 +16,12 @@ export interface AuditLogEntry {
 
 const STORAGE_KEY = "alangh_audit_logs";
 const MAX_ENTRIES = 5000;
+
+let _backendActor: backendInterface | null = null;
+
+export function setAuditBackendActor(actor: backendInterface | null) {
+  _backendActor = actor;
+}
 
 export function logAudit(entry: Omit<AuditLogEntry, "id" | "timestamp">): void {
   try {
@@ -26,6 +37,20 @@ export function logAudit(entry: Omit<AuditLogEntry, "id" | "timestamp">): void {
     const trimmed =
       logs.length > MAX_ENTRIES ? logs.slice(logs.length - MAX_ENTRIES) : logs;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+
+    // Fire-and-forget push to backend
+    if (_backendActor) {
+      const backendLog: BackendAuditLog = {
+        id: newEntry.id,
+        timestamp: BigInt(Date.now()),
+        actorId: entry.actor,
+        actorType: entry.actorType,
+        action: entry.action,
+        details: entry.details,
+        resource: entry.resource || "",
+      };
+      _backendActor.addAuditLog(backendLog).catch(() => {});
+    }
   } catch {
     // Silently fail if storage is unavailable
   }
