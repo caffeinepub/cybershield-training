@@ -83,34 +83,38 @@ export function Certificate() {
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          .cert-page { padding: 0 !important; background: white !important; }
+          .cert-page { padding: 0 !important; }
           .cert-wrapper {
             box-shadow: none !important;
-            border: 4px double #1a4a2e !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            border-radius: 0 !important;
           }
-          body { background: white !important; }
+          body { background: #0a1628 !important; }
         }
       `}</style>
 
       <main
         className="cert-page min-h-screen py-10 px-4 flex flex-col items-center"
+        style={{
+          background:
+            "linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%)",
+        }}
         data-ocid="certificate.page"
       >
         {/* Nav (hidden on print) */}
         <div className="no-print w-full max-w-3xl flex items-center justify-between mb-8">
           <Link
             to="/profile"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
             data-ocid="certificate.link"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Profile
           </Link>
           <Button
             onClick={handlePrint}
-            className="bg-primary text-primary-foreground hover:bg-primary/80 glow-cyan"
+            className="bg-primary text-primary-foreground hover:bg-primary/80"
             data-ocid="certificate.primary_button"
           >
             <Download className="w-4 h-4 mr-2" />
@@ -118,116 +122,146 @@ export function Certificate() {
           </Button>
         </div>
 
-        {/* Certificate */}
-        <div className="cert-wrapper w-full max-w-3xl bg-card border-2 border-primary/40 rounded-2xl shadow-[0_0_60px_rgba(0,255,170,0.12)] overflow-hidden">
-          {/* Top accent bar */}
-          <div className="h-3 bg-gradient-to-r from-primary via-accent to-primary" />
-
-          <div className="px-12 py-12 text-center">
-            {/* Logo area */}
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <img
-                src="/assets/Alangh_Logo.png"
-                alt="Alangh Academy"
-                className="h-14 w-auto object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
+        {/* Certificate wrapper */}
+        <div
+          className="cert-wrapper w-full max-w-3xl rounded-2xl overflow-hidden shadow-[0_0_80px_rgba(0,100,255,0.25)]"
+          style={{
+            background:
+              "linear-gradient(160deg, #0d1f3c 0%, #0a1628 40%, #061020 100%)",
+            border: "2px solid rgba(59,130,246,0.4)",
+          }}
+        >
+          {/* Background cybersecurity image with overlay */}
+          <div className="relative">
+            {/* Cybersecurity hero image strip */}
+            <div
+              className="w-full h-40 bg-cover bg-center relative"
+              style={{
+                backgroundImage:
+                  "url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=900&auto=format&fit=crop&q=80')",
+              }}
+            >
+              {/* Dark overlay so text is readable */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(10,22,40,0.6) 0%, rgba(10,22,40,0.95) 100%)",
                 }}
               />
-              <div className="text-left">
-                <p className="font-display text-xl font-bold text-foreground">
-                  Alangh Academy
-                </p>
-                <p className="text-xs text-muted-foreground tracking-widest uppercase">
-                  Cybersecurity Training
-                </p>
+
+              {/* Logo + Academy name centred over the image */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                <img
+                  src="/assets/Alangh_Logo.png"
+                  alt="Alangh Academy"
+                  className="h-16 w-auto object-contain drop-shadow-lg"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                <div className="text-center">
+                  <p className="font-display text-2xl font-bold text-white tracking-wide drop-shadow">
+                    Alangh Academy
+                  </p>
+                  <p className="text-xs text-blue-300 tracking-[0.35em] uppercase">
+                    Cybersecurity Training
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Decorative divider */}
-            <div className="flex items-center gap-4 my-8">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-              <Award className="w-6 h-6 text-primary" />
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            {/* Top accent bar */}
+            <div className="h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600" />
+          </div>
+
+          {/* Certificate body */}
+          <div className="px-12 py-10 text-center">
+            {/* Divider + award icon */}
+            <div className="flex items-center gap-4 mb-7">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
+              <Award className="w-6 h-6 text-blue-400" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
             </div>
 
-            {/* Main content */}
-            <p className="text-sm font-medium tracking-[0.3em] uppercase text-primary mb-6">
+            {/* Certificate label */}
+            <p className="text-sm font-semibold tracking-[0.3em] uppercase text-blue-400 mb-6">
               Certificate of Completion
             </p>
 
-            <p className="text-muted-foreground text-base mb-3">
+            <p className="text-slate-400 text-base mb-3">
               This is to certify that
             </p>
 
-            <h1
-              className="font-display text-4xl md:text-5xl font-bold text-foreground mb-5 leading-tight"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
+            <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-5 leading-tight">
               {cert.userName}
             </h1>
 
-            <p className="text-muted-foreground text-base mb-3">
+            <p className="text-slate-400 text-base mb-3">
               has successfully completed the
             </p>
 
-            <p className="font-display text-xl font-semibold text-primary mb-2">
+            <p className="font-display text-xl font-semibold text-blue-300 mb-2">
               {cert.courseName}
             </p>
 
-            <p className="text-sm text-muted-foreground mb-8">
-              offered by Alangh Academy Pvt. Ltd.
+            <p className="text-sm text-slate-400 mb-8">
+              offered by Alangh Academy
             </p>
 
-            {/* Decorative divider */}
+            {/* Divider */}
             <div className="flex items-center gap-4 mb-8">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
             </div>
 
-            {/* Date and signature row */}
+            {/* Date / Programme / Status row */}
             <div className="grid grid-cols-3 gap-6 mb-8">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                   Date of Issue
                 </p>
-                <p className="font-semibold text-sm">{issuedDate}</p>
+                <p className="font-semibold text-sm text-white">{issuedDate}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                   Programme
                 </p>
-                <p className="font-semibold text-sm">HackStart™ Beginner</p>
+                <p className="font-semibold text-sm text-white">
+                  HackStart™ Beginner
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
                   Status
                 </p>
-                <p className="font-semibold text-sm text-primary">Verified ✓</p>
+                <p className="font-semibold text-sm text-blue-400">
+                  Verified ✓
+                </p>
               </div>
             </div>
 
-            {/* Bottom accent */}
+            {/* Bottom shield divider */}
             <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-              <Shield className="w-4 h-4 text-primary/50" />
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
+              <Shield className="w-4 h-4 text-blue-500/60" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
             </div>
 
-            <p className="text-xs text-muted-foreground/60 font-mono">
+            <p className="text-xs text-slate-600 font-mono">
               Certificate ID: {cert.certificateId} · {cert.userEmail}
             </p>
           </div>
 
           {/* Bottom accent bar */}
-          <div className="h-3 bg-gradient-to-r from-primary via-accent to-primary" />
+          <div className="h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600" />
         </div>
 
-        {/* Print button (bottom, also hidden on print) */}
+        {/* Bottom print button */}
         <div className="no-print mt-8">
           <Button
             onClick={handlePrint}
             variant="outline"
-            className="border-primary/30 text-primary hover:bg-primary/10"
+            className="border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
             data-ocid="certificate.secondary_button"
           >
             <Download className="w-4 h-4 mr-2" />
