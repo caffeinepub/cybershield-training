@@ -255,7 +255,45 @@ function LeadersCarousel({ leaders }: { leaders: Leader[] }) {
   );
 }
 
+const DEFAULT_LEADERS: Leader[] = [
+  {
+    id: "l1",
+    name: "Founder & CEO",
+    role: "Cybersecurity Expert",
+    bio: "Leading Alangh Academy with a vision to make cybersecurity accessible to everyone.",
+    image:
+      "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&auto=format",
+  },
+];
+
+function loadLeadersFromStorage(): Leader[] {
+  try {
+    const raw = localStorage.getItem("alangh_leaders_content");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return DEFAULT_LEADERS;
+}
+
 export function AboutUs() {
+  const [leaders, setLeaders] = useState<Leader[]>(() =>
+    loadLeadersFromStorage(),
+  );
+
+  useEffect(() => {
+    const handler = () => {
+      setLeaders(loadLeadersFromStorage());
+    };
+    window.addEventListener("storage", handler);
+    window.addEventListener("alanghLeadersChanged", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("alanghLeadersChanged", handler);
+    };
+  }, []);
+
   useEffect(() => {
     document.title =
       "About Us | Alangh Academy \u2013 Structured Cybersecurity Learning for Beginners";
@@ -690,48 +728,30 @@ export function AboutUs() {
       </section>
 
       {/* Meet The Leaders */}
-      {(() => {
-        const defaultLeaders = [
-          {
-            id: "l1",
-            name: "Founder & CEO",
-            role: "Cybersecurity Expert",
-            bio: "Leading Alangh Academy with a vision to make cybersecurity accessible to everyone.",
-            image:
-              "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&auto=format",
-          },
-        ];
-        let leaders = defaultLeaders;
-        try {
-          const raw = localStorage.getItem("alangh_leaders_content");
-          if (raw) leaders = JSON.parse(raw);
-        } catch {}
-        if (leaders.length === 0) return null;
-        return (
-          <section className="py-24 bg-secondary/20">
-            <div className="container mx-auto px-4">
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-              >
-                <motion.div variants={fadeUp} className="text-center mb-14">
-                  <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-                    Meet The{" "}
-                    <span className="text-primary glow-text">Leaders</span>
-                  </h2>
-                  <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                    The people behind Alangh Academy — passionate about making
-                    cybersecurity education accessible and impactful.
-                  </p>
-                </motion.div>
-                <LeadersCarousel leaders={leaders} />
+      {leaders.length > 0 && (
+        <section className="py-24 bg-secondary/20">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+            >
+              <motion.div variants={fadeUp} className="text-center mb-14">
+                <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+                  Meet The{" "}
+                  <span className="text-primary glow-text">Leaders</span>
+                </h2>
+                <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                  The people behind Alangh Academy — passionate about making
+                  cybersecurity education accessible and impactful.
+                </p>
               </motion.div>
-            </div>
-          </section>
-        );
-      })()}
+              <LeadersCarousel leaders={leaders} />
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="py-24 relative overflow-hidden">

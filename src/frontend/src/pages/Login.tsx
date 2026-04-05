@@ -41,7 +41,9 @@ type LoginState =
   | "found"
   | "notfound"
   | "wrongpassword"
-  | "nopassword";
+  | "nopassword"
+  | "actor_loading"
+  | "connection_error";
 
 export function Login() {
   const navigate = useNavigate();
@@ -73,40 +75,51 @@ export function Login() {
     const hash = btoa(password);
     const lowerUsername = username.trim().toLowerCase();
 
-    // Try backend first
-    let backendMatch: Registration | null = null;
-    try {
-      if (actor) {
-        const result = await (actor as unknown as Backend).loginUser(
-          lowerUsername,
-          hash,
-        );
-        if (result) {
-          backendMatch = {
-            id: `user_${result.username}`,
-            name: result.fullName,
-            username: result.username,
-            email: result.email,
-            phone: result.phone,
-            address: result.address,
-            profile: result.profileBio,
-            reason: result.reason,
-            registeredAt: new Date(
-              Number(result.createdAt) / 1_000_000,
-            ).toISOString(),
-            enrolledCourse: result.enrolledCourse ?? undefined,
-            passwordHash: result.passwordHash,
-          } as Registration;
-        }
-      }
-    } catch (err) {
-      console.warn(
-        "Backend login unavailable, falling back to localStorage:",
-        err,
-      );
+    // If actor is not yet initialized, show a loading state instead of silently failing
+    if (!actor) {
+      setIsLoading(false);
+      setLoginState("actor_loading");
+      return;
     }
 
-    // Fall back to localStorage
+    // Try backend first
+    let backendMatch: Registration | null = null;
+    let backendError = false;
+    try {
+      const result = await (actor as unknown as Backend).loginUser(
+        lowerUsername,
+        hash,
+      );
+      if (result) {
+        backendMatch = {
+          id: `user_${result.username}`,
+          name: result.fullName,
+          username: result.username,
+          email: result.email,
+          phone: result.phone,
+          address: result.address,
+          profile: result.profileBio,
+          reason: result.reason,
+          registeredAt: new Date(
+            Number(result.createdAt) / 1_000_000,
+          ).toISOString(),
+          enrolledCourse: result.enrolledCourse ?? undefined,
+          passwordHash: result.passwordHash,
+        } as Registration;
+      }
+    } catch (err) {
+      console.warn("Backend login error:", err);
+      backendError = true;
+    }
+
+    // If backend threw an error, show connection error instead of silently falling through
+    if (backendError) {
+      setIsLoading(false);
+      setLoginState("connection_error");
+      return;
+    }
+
+    // Fall back to localStorage only if backend returned null (user not found in backend)
     let match: Registration | null = backendMatch;
     if (!match) {
       const users: Registration[] = (() => {
@@ -235,7 +248,9 @@ export function Login() {
           {(loginState === "form" ||
             loginState === "notfound" ||
             loginState === "wrongpassword" ||
-            loginState === "nopassword") && (
+            loginState === "nopassword" ||
+            loginState === "actor_loading" ||
+            loginState === "connection_error") && (
             <motion.div
               key="login-form"
               initial={{ opacity: 0, y: 20 }}
@@ -340,6 +355,41 @@ export function Login() {
                     </div>
 
                     {/* Error states */}
+                    {loginState === "actor_loading" && (
+                      <div
+                        className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3"
+                        data-ocid="login.error_state"
+                      >
+                        <p className="text-sm text-amber-400">
+                          Connecting to server, please wait a moment and try
+                          again.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setLoginState("form")}
+                          className="text-xs text-primary hover:underline mt-1 block"
+                        >
+                          Retry →
+                        </button>
+                      </div>
+                    )}
+                    {loginState === "connection_error" && (
+                      <div
+                        className="rounded-lg bg-destructive/10 border border-destructive/30 p-3"
+                        data-ocid="login.error_state"
+                      >
+                        <p className="text-sm text-destructive">
+                          Connection error — please try again in a moment.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setLoginState("form")}
+                          className="text-xs text-primary hover:underline mt-1 block"
+                        >
+                          Retry →
+                        </button>
+                      </div>
+                    )}
                     {loginState === "notfound" && (
                       <div
                         className="rounded-lg bg-destructive/10 border border-destructive/30 p-3"

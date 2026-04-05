@@ -32,7 +32,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const WHY_FEATURES = [
   {
@@ -232,7 +232,17 @@ function loadHomepageContent() {
 }
 
 export function Landing() {
-  const [content] = useState(() => loadHomepageContent());
+  const [content, setContent] = useState(() => loadHomepageContent());
+
+  useEffect(() => {
+    const handler = () => setContent(loadHomepageContent());
+    window.addEventListener("storage", handler);
+    window.addEventListener("alanghHomepageChanged", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("alanghHomepageChanged", handler);
+    };
+  }, []);
 
   const heroTagline = content?.hero?.tagline ?? null;
   const heroSubTagline = content?.hero?.subTagline ?? null;

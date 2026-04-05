@@ -179,23 +179,34 @@ export function ForgotPassword() {
       return;
     }
 
+    // If actor not yet initialized, show a retry message
+    if (!actor) {
+      setUsernameError("Connecting to server, please wait and try again.");
+      return;
+    }
+
     // Try backend first
     let rawEmail: string | null = null;
+    let backendError = false;
     try {
-      if (actor) {
-        rawEmail = await (actor as unknown as Backend).getMaskedEmailByUsername(
-          inputUsername.trim().toLowerCase(),
-        );
-      }
+      rawEmail = await (actor as unknown as Backend).getMaskedEmailByUsername(
+        inputUsername.trim().toLowerCase(),
+      );
     } catch (err) {
-      console.warn("Backend unavailable for forgot password:", err);
+      console.warn("Backend error for forgot password:", err);
+      backendError = true;
+    }
+
+    if (backendError) {
+      setUsernameError("Connection error — please try again.");
+      return;
     }
 
     if (rawEmail) {
       // Backend returned the raw email — mask it client-side
       setMaskedEmail(maskEmail(rawEmail));
     } else {
-      // Fall back to localStorage lookup
+      // Backend returned null — user not found in backend; try localStorage as fallback
       const user = lookupByUsername(inputUsername);
       if (!user) {
         setUsernameError("No account found with that username.");

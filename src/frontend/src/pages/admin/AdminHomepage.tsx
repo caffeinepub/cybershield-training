@@ -181,6 +181,7 @@ function saveSection(section: string, data: unknown) {
     STORAGE_KEY,
     JSON.stringify({ ...existing, [section]: data }),
   );
+  window.dispatchEvent(new Event("alanghHomepageChanged"));
 }
 
 interface Testimonial {
@@ -411,6 +412,7 @@ export function AdminHomepage() {
   // --- Reset ---
   const resetAll = () => {
     localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(new Event("alanghHomepageChanged"));
     setHero({ ...DEFAULT_HERO });
     setStats([...DEFAULT_STATS]);
     setPersonas([...DEFAULT_PERSONAS]);

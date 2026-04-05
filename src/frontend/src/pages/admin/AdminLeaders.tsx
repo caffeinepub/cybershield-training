@@ -97,6 +97,7 @@ export function AdminLeaders() {
     }
     setLeaders(updated);
     saveLeaders(updated);
+    window.dispatchEvent(new Event("alanghLeadersChanged"));
     setDialogOpen(false);
     toast.success(
       editIdx !== null ? "Leader card updated!" : "Leader card added!",
@@ -107,6 +108,7 @@ export function AdminLeaders() {
     const updated = leaders.filter((_, idx) => idx !== i);
     setLeaders(updated);
     saveLeaders(updated);
+    window.dispatchEvent(new Event("alanghLeadersChanged"));
     toast.success("Leader card removed.");
   };
 
